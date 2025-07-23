@@ -799,7 +799,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
               />
             </div>
           </div>
-          <div className={`mt-2 h-4 rounded bg-gradient-to-r ${formData.color_class}`}></div>
+          <div className={`mt-2 h-2 rounded bg-gradient-to-r ${formData.color_class}`}></div>
 
           <div className="flex gap-2 pt-2">
             <button
@@ -841,7 +841,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
         </button>
       </div>
       
-      <div className="pr-16">
+      <div className="pr-16 pb-4">
         <div className="flex items-top gap-3 mb-3">
           <span className="text-4xl">{category.icon}</span>
           <div>
@@ -853,8 +853,8 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
             </p>
           </div>
         </div>
-        <div className={`h-2 bg-gradient-to-r ${category.color_class} rounded-full mb-3`}></div>
       </div>
+      <div className={`absolute bottom-3 left-5 right-5 h-2 bg-gradient-to-r ${category.color_class} rounded-full`}></div>
     </div>
   );
 };
