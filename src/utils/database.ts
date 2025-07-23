@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { Registration, BBQData, Category, PotluckCategory } from '../types';
 import { fetchGiphyGif } from './giphy';
-import { extractFoodItem } from './openai';
+import { extractPotluckItem } from './openai';
 
 export const loadPotluckCategories = async (potluckId: string): Promise<PotluckCategory[]> => {
   try {
@@ -302,7 +302,7 @@ export const saveRegistration = async (registration: Registration, potluckId: st
     // Extract food item using OpenAI and fetch GIF if we don't have one
     let gifUrl = registration.gif_url;
     if (!gifUrl && registration.description) {
-      const foodItem = await extractFoodItem(registration.description);
+      const foodItem = await extractPotluckItem(registration.description);
       gifUrl = await fetchGiphyGif(foodItem);
     }
 
