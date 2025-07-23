@@ -1,6 +1,6 @@
-# Grillaften
+# POTLUCK
 
-Grillaften is a web application designed to manage  potluck events. It allows users to register items they plan to bring, view other participants' contributions, and manage the event details. The application is built using React, TypeScript, and Supabase for backend services.
+Potluck Organizer is a web application designed to manage shared dish events. It allows users to register items they plan to bring, view other participants' contributions, and manage the event details. The application is built using React, TypeScript, and Supabase for backend services.
 
 ## Features
 
@@ -21,8 +21,8 @@ Grillaften is a web application designed to manage  potluck events. It allows us
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/ammonl/grillaften
-   cd grillaften
+   git clone https://github.com/ammonl/potluck
+   cd potluck
    ```
 
 2. **Install dependencies**:
