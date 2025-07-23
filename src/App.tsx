@@ -139,8 +139,8 @@ function MainApp() {
           // Load specific potluck by slug
           query = query.eq('slug', slug).eq('is_active', true);
         } else {
-          // Load the grillaften2 potluck for home page
-          query = query.eq('slug', 'grillaften2').eq('is_active', true);
+          // Load the default potluck for home page
+          query = query.eq('slug', import.meta.env.DEFAULT_POTLUCK).eq('is_active', true);
         }
         
         const { data: potlucks, error } = await query;
