@@ -97,6 +97,7 @@ export interface Database {
           header_background: string | null
           header_overlay_color: string
           header_overlay_opacity: number
+          footer_emojis: string | null
           organizer_name: string | null
           organizer_email: string | null
           created_at: string
@@ -117,6 +118,7 @@ export interface Database {
           header_background?: string | null
           header_overlay_color?: string
           header_overlay_opacity?: number
+          footer_emojis?: string | null
           organizer_name?: string | null
           organizer_email?: string | null
           created_at?: string
@@ -137,6 +139,7 @@ export interface Database {
           header_background?: string | null
           header_overlay_color?: string
           header_overlay_opacity?: number
+          footer_emojis?: string | null
           organizer_name?: string | null
           organizer_email?: string | null
           created_at?: string

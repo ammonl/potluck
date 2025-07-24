@@ -19,6 +19,7 @@ interface Potluck {
   header_background?: string | null;
   header_overlay_color?: string;
   header_overlay_opacity?: number;
+  footer_emojis?: string | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -49,7 +50,8 @@ export const PotluckEditPage: React.FC<PotluckEditPageProps> = ({ onBack }) => {
     header_overlay_color: 'black',
     header_overlay_opacity: 0.20,
     organizer_name: '',
-    organizer_email: ''
+    organizer_email: '',
+    footer_emojis: '🍕 🍝 🍰 🥤 🎊 🎈 🎉'
   });
 
   // Categories state
@@ -93,7 +95,8 @@ export const PotluckEditPage: React.FC<PotluckEditPageProps> = ({ onBack }) => {
           header_overlay_color: data.header_overlay_color || 'black',
           header_overlay_opacity: data.header_overlay_opacity ?? 0.20,
           organizer_name: data.organizer_name || '',
-          organizer_email: data.organizer_email || ''
+          organizer_email: data.organizer_email || '',
+          footer_emojis: data.footer_emojis || ''
         });
       } catch (error) {
         console.error('Error loading potluck:', error);
@@ -672,6 +675,64 @@ export const PotluckEditPage: React.FC<PotluckEditPageProps> = ({ onBack }) => {
                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                     placeholder="john@example.com"
                   />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Footer Emojis (Optional)
+                  </label>
+                  <div className="space-y-3">
+                    <input
+                      type="text"
+                      value={formData.footer_emojis || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, footer_emojis: e.target.value }))}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                      placeholder="🍕 🍝 🍰 🥤 🎊 🎈 🎉"
+                    />
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      <p className="mb-2">Enter emojis to display in the footer. Leave empty to hide the emoji line. Examples:</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, footer_emojis: '🍕 🍝 🍰 🥤 🎊 🎈 🎉' }))}
+                          className="text-left px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded text-xs hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                        >
+                          🍖 🌭 🍔 🥩 🌽 🍺 🎉 (BBQ)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, footer_emojis: '🥗 🍕 🍝 🍰 🥤 🎊 🎈' }))}
+                          className="text-left px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded text-xs hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                        >
+                          🥗 🍕 🍝 🍰 🥤 🎊 🎈 (Party)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, footer_emojis: '🎃 🍂 🦃 🥧 🍷 🕯️ 🍁' }))}
+                          className="text-left px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded text-xs hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                        >
+                          🎃 🍂 🦃 🥧 🍷 🕯️ 🍁 (Thanksgiving)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, footer_emojis: '' }))}
+                          className="text-left px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded text-xs hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                        >
+                          (No emojis)
+                        </button>
+                      </div>
+                    </div>
+                    {formData.footer_emojis && (
+                      <div className="mt-3">
+                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Preview:</p>
+                        <div className="bg-gray-800 rounded-lg p-4 text-center">
+                          <div className="text-4xl space-x-4 text-white">
+                            {formData.footer_emojis}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 

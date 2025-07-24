@@ -31,6 +31,7 @@ interface Potluck {
   header_overlay_opacity?: number;
   organizer_name?: string;
   organizer_email?: string;
+  footer_emojis?: string | null;
 }
 
 function App() {
@@ -156,7 +157,7 @@ function MainApp() {
           // If slug provided but no potluck found, redirect to home
           navigate('/', { replace: true });
         } else {
-          // If grillaften2 not found, fall back to first active potluck
+          // If no slug is provided and the default potluck is not found, fall back to first active potluck
           const { data: fallbackPotlucks, error: fallbackError } = await supabase
             .from('potlucks')
             .select('*')
@@ -419,9 +420,11 @@ function MainApp() {
           <p className="text-gray-300">
             {footerText}
           </p>
-          <div className="mt-6 text-4xl space-x-4">
-            🍖 🌭 🍔 🥩 🌽 🍺 🎉
-          </div>
+          {potluck?.footer_emojis && (
+            <div className="mt-6 text-4xl space-x-4">
+              {potluck.footer_emojis}
+            </div>
+          )}
           
           {/* Event Organizer Contact */}
           {potluck?.organizer_name && potluck?.organizer_email && (
