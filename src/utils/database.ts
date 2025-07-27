@@ -299,7 +299,7 @@ const getCategoryKey = (categoryId: string): string => {
 
 export const saveRegistration = async (registration: Registration, potluckId: string): Promise<Registration | null> => {
   try {
-    // Extract food item using OpenAI and fetch GIF if we don't have one
+        // Extract food item using OpenAI and fetch GIF if we don't have one
     let gifUrl = registration.gif_url;
     if (!gifUrl && registration.description) {
       const foodItem = await extractPotluckItem(registration.description);
@@ -331,6 +331,11 @@ export const saveRegistration = async (registration: Registration, potluckId: st
 
     console.log('Registration saved successfully:', data);
 
+    // If this is a slotted registration, reorganize slots to fill gaps
+    if (data.slot_number !== null) {
+      await reorganizeSlots(potluckId, data.category);
+    }
+
     return {
       id: data.id,
       name: data.name,
@@ -349,6 +354,18 @@ export const saveRegistration = async (registration: Registration, potluckId: st
 
 export const deleteRegistration = async (id: string): Promise<boolean> => {
   try {
+    // Get the registration details before deleting
+    const { data: registrationToDelete, error: fetchError } = await supabase
+      .from('potluck_registrations')
+      .select('potluck_id, category, slot_number')
+      .eq('id', id)
+      .single();
+
+    if (fetchError) {
+      console.error('Error fetching registration for deletion:', fetchError);
+      return false;
+    }
+
     const { error } = await supabase
       .from('potluck_registrations')
       .delete()
@@ -359,10 +376,58 @@ export const deleteRegistration = async (id: string): Promise<boolean> => {
       return false;
     }
 
+    // If this was a slotted registration, reorganize slots to fill gaps
+    if (registrationToDelete?.slot_number !== null) {
+      await reorganizeSlots(registrationToDelete.potluck_id, registrationToDelete.category);
+    }
+
     return true;
   } catch (error) {
     console.error('Error deleting registration:', error);
     return false;
+  }
+};
+
+// Helper function to reorganize slots and fill gaps
+const reorganizeSlots = async (potluckId: string, categoryId: string): Promise<void> => {
+  try {
+    // Get all registrations for this category, ordered by slot_number
+    const { data: registrations, error } = await supabase
+      .from('potluck_registrations')
+      .select('*')
+      .eq('potluck_id', potluckId)
+      .eq('category', categoryId)
+      .not('slot_number', 'is', null)
+      .order('slot_number', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching registrations for reorganization:', error);
+      return;
+    }
+
+    if (!registrations || registrations.length === 0) {
+      return;
+    }
+
+    // Reassign slot numbers sequentially starting from 1
+    const updates = registrations.map((reg, index) => ({
+      id: reg.id,
+      slot_number: index + 1
+    }));
+
+    // Update all registrations with new slot numbers
+    for (const update of updates) {
+      const { error: updateError } = await supabase
+        .from('potluck_registrations')
+        .update({ slot_number: update.slot_number })
+        .eq('id', update.id);
+
+      if (updateError) {
+        console.error('Error updating slot number:', updateError);
+      }
+    }
+  } catch (error) {
+    console.error('Error reorganizing slots:', error);
   }
 };
 
