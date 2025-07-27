@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Users, Calendar, Settings, Edit2, Trash2, Globe, LogOut, Save, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { loadCategories, saveCategory, updateCategory, deleteCategory } from '../utils/database';
+import { getCategoryBorderColor } from '../utils/colors';
 import { Category } from '../types';
 
 interface Potluck {
@@ -666,7 +667,9 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
 
   if (isEditing) {
     return (
-      <div className="bg-white dark:bg-gray-700 rounded-lg p-6 border-2 border-orange-500 shadow-lg">
+      <div className="bg-white dark:bg-gray-700 rounded-lg p-6 border-2 border-orange-500 shadow-lg" style={{
+        borderColor: getCategoryBorderColor(formData.color_class)
+      }}>
         <div className="space-y-4">
           <div className="grid grid-cols-1 gap-3">
             <div>
@@ -823,7 +826,9 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
   }
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-600 relative">
+    <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-600 relative" style={{
+      borderColor: getCategoryBorderColor(category.color_class)
+    }}>
       <div className="absolute top-4 right-4 flex gap-2">
         <button
           onClick={onEdit}

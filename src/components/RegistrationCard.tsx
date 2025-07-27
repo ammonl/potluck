@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { Edit2, Save, X, Flame, Plus } from 'lucide-react';
 import { Registration, Category } from '../types';
 import { Language, getTranslation } from '../utils/translations';
+import { getCategoryBorderColor } from '../utils/colors';
 
 interface RegistrationCardProps {
   registration: Registration | null;
@@ -93,7 +94,9 @@ export const RegistrationCard: React.FC<RegistrationCardProps> = ({
 
   if (isEditing) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-2 border-orange-200 dark:border-orange-700 transform hover:scale-105 transition-all duration-300">
+      <div className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-2 transform hover:scale-105 transition-all duration-300`} style={{
+        borderColor: getCategoryBorderColor(category.color_class)
+      }}>
         <div className="flex items-center gap-2 mb-4">
           <span className="text-2xl">{category.icon}</span>
           <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">
@@ -132,7 +135,7 @@ export const RegistrationCard: React.FC<RegistrationCardProps> = ({
             <button
               onClick={handleSave}
               disabled={isLoading}
-              className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-lg font-medium hover:from-orange-600 hover:to-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
+              className={`flex-1 bg-gradient-to-r ${category.color_class} text-white px-4 py-2 rounded-lg font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2`}
             >
               <Save className="w-4 h-4" />
               {isLoading ? getTranslation(language, 'saving') : (registration && !name.trim() && !description.trim() ? getTranslation(language, 'clear') : getTranslation(language, 'save'))}
@@ -154,7 +157,16 @@ export const RegistrationCard: React.FC<RegistrationCardProps> = ({
 
   if (!registration) {
     return (
-      <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-xl shadow-md p-6 border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-orange-300 dark:hover:border-orange-600 transition-all duration-300 cursor-pointer group"
+      <div className={`bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-xl shadow-md p-6 border-2 border-dashed border-gray-300 dark:border-gray-600 transition-all duration-300 cursor-pointer group`}
+           style={{
+             '--hover-border-color': getCategoryBorderColor(category.color_class)
+           } as React.CSSProperties}
+           onMouseEnter={(e) => {
+             (e.currentTarget as HTMLElement).style.borderColor = getCategoryBorderColor(category.color_class);
+           }}
+           onMouseLeave={(e) => {
+             (e.currentTarget as HTMLElement).style.borderColor = '';
+           }}
            onClick={() => setIsEditing(true)}>
         <div className="text-center">
           {isAdditional ? (
@@ -179,7 +191,9 @@ export const RegistrationCard: React.FC<RegistrationCardProps> = ({
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-2 border-orange-200 dark:border-orange-700 transform hover:scale-105 transition-all duration-300">
+    <div className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-2 transform hover:scale-105 transition-all duration-300`} style={{
+      borderColor: getCategoryBorderColor(category.color_class)
+    }}>
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-2">
           <span className="text-2xl">{category.icon}</span>
