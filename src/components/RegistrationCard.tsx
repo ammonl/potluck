@@ -26,7 +26,7 @@ export const RegistrationCard: React.FC<RegistrationCardProps> = ({
   placeholder,
   language
 }) => {
-  const [isEditing, setIsEditing] = useState(!registration);
+  const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(registration?.name || '');
   const [description, setDescription] = useState(registration?.description || '');
   const [isLoading, setIsLoading] = useState(false);
@@ -85,11 +85,11 @@ export const RegistrationCard: React.FC<RegistrationCardProps> = ({
     if (registration) {
       setName(registration.name);
       setDescription(registration.description);
-      setIsEditing(false);
     } else {
       setName('');
       setDescription('');
     }
+    setIsEditing(false);
   };
 
   if (isEditing) {
@@ -140,51 +140,36 @@ export const RegistrationCard: React.FC<RegistrationCardProps> = ({
               <Save className="w-4 h-4" />
               {isLoading ? getTranslation(language, 'saving') : (registration && !name.trim() && !description.trim() ? getTranslation(language, 'clear') : getTranslation(language, 'save'))}
             </button>
-            {registration && (
-              <button
-                onClick={handleCancel}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200 flex items-center gap-2"
-              >
-                <X className="w-4 h-4" />
-                {getTranslation(language, 'cancel')}
-              </button>
-            )}
+            <button
+              onClick={handleCancel}
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200 flex items-center gap-2"
+            >
+              <X className="w-4 h-4" />
+              {getTranslation(language, 'cancel')}
+            </button>
           </div>
         </div>
       </div>
     );
   }
 
+
   if (!registration) {
     return (
-      <div className={`bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-xl shadow-md p-6 border-2 border-dashed border-gray-300 dark:border-gray-600 transition-all duration-300 cursor-pointer group`}
-           style={{
-             '--hover-border-color': getCategoryBorderColor(category.color_class)
-           } as React.CSSProperties}
-           onMouseEnter={(e) => {
-             (e.currentTarget as HTMLElement).style.borderColor = getCategoryBorderColor(category.color_class);
-           }}
-           onMouseLeave={(e) => {
-             (e.currentTarget as HTMLElement).style.borderColor = '';
-           }}
+      <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-xl shadow-md p-6 border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-orange-300 dark:hover:border-orange-600 transition-all duration-300 cursor-pointer group"
            onClick={() => setIsEditing(true)}>
         <div className="text-center">
-          {isAdditional ? (
-            <div className={`w-16 h-16 bg-gradient-to-r ${category.color_class} rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-200`}>
-              <Plus className="w-8 h-8 text-white" />
-            </div>
-          ) : (
-            <div className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-200">
-              {category.icon}
-            </div>
-          )}
+        
+          <div className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-200">
+            {category.icon}
+          </div>
           <h3 className="text-lg font-bold text-gray-600 dark:text-gray-300 mb-2">
-            {isAdditional ? getTranslation(language, 'addSomethingExtra') : `${singularTitle} ${slotNumber ? `#${slotNumber}` : ''}`}
+            {singularTitle} {slotNumber ? `#${slotNumber}` : ''}
           </h3>
           <p className="text-gray-500 dark:text-gray-400">
-            {isAdditional ? getTranslation(language, 'gotSomethingSpecial') : (placeholder ? `${placeholder} - ${getTranslation(language, 'clickToSignUp')}` : getTranslation(language, 'clickToSignUp'))}
+            {getTranslation(language, 'clickToSignUp')}
           </p>
-          {!isAdditional && <Flame className="w-6 h-6 text-orange-500 mx-auto mt-2 group-hover:text-orange-600 transition-colors duration-200" />}
+          <Flame className="w-6 h-6 text-orange-500 mx-auto mt-2 group-hover:text-orange-600 transition-colors duration-200" />
         </div>
       </div>
     );
