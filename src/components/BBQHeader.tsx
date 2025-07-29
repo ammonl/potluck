@@ -98,6 +98,36 @@ export const BBQHeader: React.FC<BBQHeaderProps> = ({ potluck }) => {
         style={getOverlayStyle()}
       ></div>
       <div className="relative max-w-6xl mx-auto text-center">
+
+        
+        <div className="flex justify-center items-center gap-4 mb-6">
+          <IconComponent className="w-12 h-12 text-yellow-300 animate-pulse" />
+          <h1 className="text-5xl md:text-7xl font-bold">
+            {getTitle()}
+          </h1>
+          <IconComponent className="w-12 h-12 text-yellow-300 animate-pulse" />
+        </div>
+        
+        <p className="text-xl md:text-2xl mb-8 font-light opacity-90">
+          {getSubtitle()}
+        </p>
+        
+        <div className="flex flex-wrap justify-center gap-8 text-sm md:text-base">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-5 h-5" />
+            <span>{getFormattedDate()}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Users className="w-5 h-5" />
+            <span>{language === 'en' ? "You're Invited" : 'Du er inviteret'}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <IconComponent className="w-5 h-5" />
+            <span>{language === 'en' ? 'Bring Your Appetite' : 'Tag din appetit med'}</span>
+          </div>
+        </div>
+      </div>
+
         {/* Controls */}
         <div className="absolute top-4 right-4 flex gap-2 z-50">
           {language === 'en' ? (
@@ -138,41 +168,7 @@ export const BBQHeader: React.FC<BBQHeaderProps> = ({ potluck }) => {
               <Moon className="w-6 h-6 text-blue-200" />
             )}
           </button>
-        </div>
-        
-        <div className="flex justify-center items-center gap-4 mb-6">
-          <IconComponent className="w-12 h-12 text-yellow-300 animate-pulse" />
-          <h1 className="text-5xl md:text-7xl font-bold">
-            {getTitle()}
-          </h1>
-          <IconComponent className="w-12 h-12 text-yellow-300 animate-pulse" />
-        </div>
-        
-        <p className="text-xl md:text-2xl mb-8 font-light opacity-90">
-          {getSubtitle()}
-        </p>
-        
-        <div className="flex flex-wrap justify-center gap-8 text-sm md:text-base">
-          <div className="flex items-center gap-2">
-            <Calendar className="w-5 h-5" />
-            <span>{getFormattedDate()}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Users className="w-5 h-5" />
-            <span>{language === 'en' ? "You're Invited" : 'Du er inviteret'}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <IconComponent className="w-5 h-5" />
-            <span>{language === 'en' ? 'Bring Your Appetite' : 'Tag din appetit med'}</span>
-          </div>
-        </div>
-      </div>
-      
-      {/* Decorative BBQ icons */}
-      <div className="absolute top-4 left-4 text-6xl opacity-10">🔥</div>
-      <div className="absolute top-8 right-8 text-4xl opacity-10">🍖</div>
-      <div className="absolute bottom-4 left-8 text-5xl opacity-10">🌭</div>
-      <div className="absolute bottom-8 right-4 text-3xl opacity-10">🍺</div>
+        </div>      
     </div>
   );
 };
