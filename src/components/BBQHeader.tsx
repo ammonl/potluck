@@ -35,36 +35,25 @@ export const BBQHeader: React.FC<BBQHeaderProps> = ({ potluck }) => {
     
     if (language === 'da') {
       // Danish formatting
-      const dayNames = ['søndag', 'mandag', 'tirsdag', 'onsdag', 'torsdag', 'fredag', 'lørdag'];
-      const monthNames = ['januar', 'februar', 'marts', 'april', 'maj', 'juni', 'juli', 'august', 'september', 'oktober', 'november', 'december'];
-      
-      const dayName = dayNames[date.getDay()];
-      const day = date.getDate();
-      const monthName = monthNames[date.getMonth()];
-      const time = date.toLocaleTimeString('da-DK', { 
-        hour: '2-digit', 
+      return date.toLocaleString('da-DK', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
         minute: '2-digit',
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+        timeZone: 'UTC'
       });
-      
-      return `${dayName} d. ${day}. ${monthName} kl. ${time}`;
-    } else {
-      // English formatting
-      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-      
-      const dayName = dayNames[date.getDay()];
-      const day = date.getDate();
-      const monthName = monthNames[date.getMonth()];
-      const time = date.toLocaleTimeString('en-US', { 
-        hour: 'numeric', 
-        minute: '2-digit', 
-        hour12: true,
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-      });
-      
-      return `${dayName} ${monthName} ${day} ${time}`;
-    }
+    }      
+
+    return date.toLocaleString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: 'UTC'
+    });
   };
 
   const getTitle = () => {
