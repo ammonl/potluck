@@ -10,6 +10,7 @@ interface CategorySectionProps {
   onUpdateItem: (index: number, registration: Registration) => Promise<void>;
   onRemoveItem: (index: number) => void;
   language: Language;
+  potluckIcon?: string;
 }
 
 export const CategorySection: React.FC<CategorySectionProps> = ({
@@ -17,7 +18,8 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
   items,
   onUpdateItem,
   onRemoveItem,
-  language
+  language,
+  potluckIcon
 }) => {
   const [title, setTitle] = useState('');
 
@@ -58,6 +60,7 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
             slotNumber={index + 1}
             placeholder={getPlaceholder(index)}
             language={language}
+            potluckIcon={potluckIcon}
           />
         ))}
       </div>

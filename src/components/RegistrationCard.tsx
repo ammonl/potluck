@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useEffect } from 'react';
-import { Edit2, Save, X, Flame, Plus } from 'lucide-react';
+import { Edit2, Save, X } from 'lucide-react';
 import { Registration, Category } from '../types';
 import { Language, getTranslation } from '../utils/translations';
 import { getCategoryBorderColor } from '../utils/colors';
+import { getIconComponent } from '../utils/lucideIcons';
+
 
 interface RegistrationCardProps {
   registration: Registration | null;
@@ -14,6 +16,7 @@ interface RegistrationCardProps {
   isAdditional?: boolean;
   placeholder?: string;
   language: Language;
+  potluckIcon?: string;
 }
 
 export const RegistrationCard: React.FC<RegistrationCardProps> = ({
@@ -24,7 +27,8 @@ export const RegistrationCard: React.FC<RegistrationCardProps> = ({
   slotNumber,
   isAdditional = false,
   placeholder,
-  language
+  language,
+  potluckIcon
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(registration?.name || '');
@@ -92,6 +96,8 @@ export const RegistrationCard: React.FC<RegistrationCardProps> = ({
     setIsEditing(false);
   };
 
+  const IconComponent = getIconComponent(potluckIcon || 'Flame');
+
   if (isEditing) {
     return (
       <div className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-2 transform hover:scale-105 transition-all duration-300`} style={{
@@ -140,19 +146,18 @@ export const RegistrationCard: React.FC<RegistrationCardProps> = ({
               <Save className="w-4 h-4" />
               {isLoading ? getTranslation(language, 'saving') : (registration && !name.trim() && !description.trim() ? getTranslation(language, 'clear') : getTranslation(language, 'save'))}
             </button>
-            <button
-              onClick={handleCancel}
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200 flex items-center gap-2"
-            >
-              <X className="w-4 h-4" />
-              {getTranslation(language, 'cancel')}
-            </button>
+              <button
+                onClick={handleCancel}
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200 flex items-center gap-2"
+              >
+                <X className="w-4 h-4" />
+                {getTranslation(language, 'cancel')}
+              </button>
           </div>
         </div>
       </div>
     );
   }
-
 
   if (!registration) {
     return (
@@ -160,16 +165,16 @@ export const RegistrationCard: React.FC<RegistrationCardProps> = ({
            onClick={() => setIsEditing(true)}>
         <div className="text-center">
         
-          <div className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-200">
-            {category.icon}
-          </div>
+            <div className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-200">
+              {category.icon}
+            </div>
           <h3 className="text-lg font-bold text-gray-600 dark:text-gray-300 mb-2">
             {singularTitle} {slotNumber ? `#${slotNumber}` : ''}
           </h3>
           <p className="text-gray-500 dark:text-gray-400">
             {getTranslation(language, 'clickToSignUp')}
           </p>
-          <Flame className="w-6 h-6 text-orange-500 mx-auto mt-2 group-hover:text-orange-600 transition-colors duration-200" />
+          <IconComponent className="w-6 h-6 text-orange-500 mx-auto mt-2 group-hover:text-orange-600 transition-colors duration-200" />
         </div>
       </div>
     );

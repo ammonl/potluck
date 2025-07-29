@@ -32,6 +32,7 @@ interface Potluck {
   organizer_name?: string;
   organizer_email?: string;
   footer_emojis?: string | null;
+  icon?: string;
 }
 
 function App() {
@@ -342,7 +343,7 @@ function MainApp() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-red-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-6xl mb-4">🔥</div>
+          <div className="text-6xl mb-4">🍲</div>
           <p className="text-xl text-gray-600 dark:text-gray-300">{getTranslation(language, 'loadingBBQ')}</p>
         </div>
       </div>
@@ -405,6 +406,7 @@ function MainApp() {
               onUpdateItem={categoryData.onUpdateItem}
               onRemoveItem={categoryData.onRemoveItem}
               language={language}
+              potluckIcon={potluck?.icon}
             />
           );
         })}
@@ -413,9 +415,7 @@ function MainApp() {
       <footer className="bg-gradient-to-r from-gray-800 to-gray-900 text-white py-12 px-4">
         <div className="max-w-6xl mx-auto text-center">
           <div className="flex justify-center items-center gap-2 mb-4">
-            <span className="text-2xl">🔥</span>
             <h3 className="text-2xl font-bold">{footerTitle}</h3>
-            <span className="text-2xl">🔥</span>
           </div>
           <p className="text-gray-300">
             {footerText}

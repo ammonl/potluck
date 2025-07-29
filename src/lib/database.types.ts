@@ -100,6 +100,7 @@ export interface Database {
           footer_emojis: string | null
           organizer_name: string | null
           organizer_email: string | null
+          icon: string
           created_at: string
           updated_at: string
           potluck_id: string
@@ -121,6 +122,7 @@ export interface Database {
           footer_emojis?: string | null
           organizer_name?: string | null
           organizer_email?: string | null
+          icon?: string
           created_at?: string
           updated_at?: string
           potluck_id: string
@@ -142,6 +144,7 @@ export interface Database {
           footer_emojis?: string | null
           organizer_name?: string | null
           organizer_email?: string | null
+          icon?: string
           created_at?: string
           updated_at?: string
           potluck_id?: string

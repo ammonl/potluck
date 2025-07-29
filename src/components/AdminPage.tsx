@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Users, Calendar, Settings, Edit2, Trash2, Globe, LogOut, Save, X } from 'lucide-react';
+import { ArrowLeft, Plus, Users, Calendar, Settings, Edit2, Trash2, Globe, LogOut, Save, X, Search } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { loadCategories, saveCategory, updateCategory, deleteCategory } from '../utils/database';
 import { getCategoryBorderColor } from '../utils/colors';
 import { Category } from '../types';
+import { POPULAR_POTLUCK_ICONS, ALL_POTLUCK_ICONS, getIconComponent } from '../utils/lucideIcons';
 
 interface Potluck {
   id: string;
@@ -21,6 +22,7 @@ interface Potluck {
   organizer_email?: string | null;
   created_at?: string;
   updated_at?: string;
+  icon?: string;
 }
 
 interface AdminPageProps {
@@ -49,7 +51,8 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
     event_datetime: '',
     is_active: true,
     organizer_name: '',
-    organizer_email: ''
+    organizer_email: '',
+    icon: 'Flame'
   });
 
   // New category form state
@@ -151,7 +154,8 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
         event_datetime: '',
         is_active: true,
         organizer_name: '',
-        organizer_email: ''
+        organizer_email: '',
+        icon: 'Flame'
       });
     } catch (error) {
       console.error('Error creating potluck:', error);
@@ -346,6 +350,15 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Icon
+                      </label>
+                      <IconSelector
+                        selectedIcon={newPotluck.icon}
+                        onIconSelect={(icon) => setNewPotluck(prev => ({ ...prev, icon }))}
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Event Date & Time
                       </label>
                       <input
@@ -379,7 +392,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
                         placeholder="Sommer Grillfest 2024"
                       />
                     </div>
-                    <div className="md:col-span-2">
+                    <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Subtitle (English)
                       </label>
@@ -391,7 +404,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
                         placeholder="Join us for an amazing barbecue experience!"
                       />
                     </div>
-                    <div className="md:col-span-2">
+                    <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Subtitle (Danish)
                       </label>
@@ -441,13 +454,17 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
                       </button>
                     </div>
                     
-                    <div className="pr-16">
+                    <div className="pl-2 pr-16">
                       <div className="flex items-center gap-2 mb-2">
-                        <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">
+                        <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 flex gap-2">
+                          {(() => {
+                            const IconComponent = getIconComponent(potluck.icon || 'Flame');
+                            return <IconComponent className="w-6 h-6 text-orange-500 mt-0.5" />;
+                          })()}
                           {potluck.title_en}
                         </h3>
                         {potluck.is_active && (
-                          <span className="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-xs rounded-full">
+                          <span className="absolute top-15 right-4 flex gap-2 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-xs rounded-full">
                             Active
                           </span>
                         )}
@@ -613,6 +630,110 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
   );
 };
 
+interface IconSelectorProps {
+  selectedIcon: string;
+  onIconSelect: (icon: string) => void;
+}
+
+const IconSelector: React.FC<IconSelectorProps> = ({ selectedIcon, onIconSelect }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showAll, setShowAll] = useState(false);
+
+  const filteredIcons = (showAll ? ALL_POTLUCK_ICONS : POPULAR_POTLUCK_ICONS)
+    .filter(iconName => 
+      iconName.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+  const SelectedIconComponent = getIconComponent(selectedIcon);
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+      >
+        <div className="flex items-center gap-2">
+          <SelectedIconComponent className="w-5 h-5" />
+          <span>{selectedIcon}</span>
+        </div>
+        <div className="text-gray-400">▼</div>
+      </button>
+
+      {isOpen && (
+        <div className="absolute z-50 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-80 overflow-hidden">
+          <div className="p-3 border-b border-gray-200 dark:border-gray-600">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search icons..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              />
+            </div>
+            <div className="flex gap-2 mt-2">
+              <button
+                type="button"
+                onClick={() => setShowAll(false)}
+                className={`px-3 py-1 text-xs rounded-full transition-colors ${
+                  !showAll 
+                    ? 'bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200' 
+                    : 'bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-500'
+                }`}
+              >
+                Popular
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowAll(true)}
+                className={`px-3 py-1 text-xs rounded-full transition-colors ${
+                  showAll 
+                    ? 'bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200' 
+                    : 'bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-500'
+                }`}
+              >
+                All Icons
+              </button>
+            </div>
+          </div>
+          <div className="grid grid-cols-6 gap-1 p-2 max-h-60 overflow-y-auto">
+            {filteredIcons.map((iconName) => {
+              const IconComponent = getIconComponent(iconName);
+              return (
+                <button
+                  key={iconName}
+                  type="button"
+                  onClick={() => {
+                    onIconSelect(iconName);
+                    setIsOpen(false);
+                  }}
+                  className={`p-3 rounded-lg transition-all duration-200 flex flex-col items-center gap-1 ${
+                    selectedIcon === iconName
+                      ? 'bg-orange-100 dark:bg-orange-900 text-orange-600 dark:text-orange-300 ring-2 ring-orange-500'
+                      : 'hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-400'
+                  }`}
+                  title={iconName}
+                >
+                  <IconComponent className="w-5 h-5" />
+                  <span className="text-xs truncate w-full text-center">{iconName}</span>
+                </button>
+              );
+            })}
+          </div>
+          {filteredIcons.length === 0 && (
+            <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+              No icons found matching "{searchTerm}"
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 interface CategoryCardProps {
   category: Category;
   isEditing: boolean;
@@ -665,14 +786,15 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
     onCancel();
   };
 
+  // Use formData.color_class when editing, category.color_class when not editing
+  const currentColorClass = isEditing ? formData.color_class : category.color_class;
   if (isEditing) {
     return (
-      <div className="bg-white dark:bg-gray-700 rounded-lg p-6 border-2 border-orange-500 shadow-lg" style={{
-        borderColor: getCategoryBorderColor(formData.color_class)
+      <div className="bg-white dark:bg-gray-700 rounded-lg p-6 border-2 shadow-lg" style={{
+        borderColor: getCategoryBorderColor(currentColorClass)
       }}>
         <div className="space-y-4">
           <div className="grid grid-cols-1 gap-3">
-            <div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Icon
@@ -684,7 +806,8 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
                 className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
               />
             </div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Name
               </label>
               <input
@@ -802,7 +925,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
               />
             </div>
           </div>
-          <div className={`mt-2 h-2 rounded bg-gradient-to-r ${formData.color_class}`}></div>
+          <div className={`mt-2 h-4 rounded bg-gradient-to-r ${currentColorClass}`}></div>
 
           <div className="flex gap-2 pt-2">
             <button
@@ -826,8 +949,8 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
   }
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-600 relative" style={{
-      borderColor: getCategoryBorderColor(category.color_class)
+    <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6 border-2 relative" style={{
+      borderColor: getCategoryBorderColor(currentColorClass)
     }}>
       <div className="absolute top-4 right-4 flex gap-2">
         <button
@@ -859,7 +982,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
           </div>
         </div>
       </div>
-      <div className={`absolute bottom-3 left-5 right-5 h-2 bg-gradient-to-r ${category.color_class} rounded-full`}></div>
+      <div className={`absolute bottom-0 left-0 right-0 h-3 bg-gradient-to-r ${currentColorClass} rounded-b-lg`}></div>
     </div>
   );
 };

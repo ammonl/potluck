@@ -1,7 +1,8 @@
 import React from 'react';
-import { Flame, Users, Calendar, Sun, Moon } from 'lucide-react';
+import { Users, Calendar, Sun, Moon } from 'lucide-react';
 import { useDarkMode } from '../hooks/useDarkMode';
 import { useLanguage } from '../contexts/LanguageContext';
+import { getIconComponent } from '../utils/lucideIcons';
 
 interface Potluck {
   id: string;
@@ -17,6 +18,7 @@ interface Potluck {
   header_background?: string | null;
   header_overlay_color?: string;
   header_overlay_opacity?: number;
+  icon?: string;
 }
 
 interface BBQHeaderProps {
@@ -93,6 +95,8 @@ export const BBQHeader: React.FC<BBQHeaderProps> = ({ potluck }) => {
     }
   };
 
+  const IconComponent = getIconComponent(potluck?.icon || 'Flame');
+
   return (
     <div className="bg-gradient-to-r from-orange-600 via-red-600 to-yellow-600 dark:from-orange-800 dark:via-red-800 dark:to-yellow-800 text-white py-16 px-4 relative overflow-hidden">
       {/* Background flag image */}
@@ -148,11 +152,11 @@ export const BBQHeader: React.FC<BBQHeaderProps> = ({ potluck }) => {
         </div>
         
         <div className="flex justify-center items-center gap-4 mb-6">
-          <Flame className="w-12 h-12 text-yellow-300 animate-pulse" />
+          <IconComponent className="w-12 h-12 text-yellow-300 animate-pulse" />
           <h1 className="text-5xl md:text-7xl font-bold">
             {getTitle()}
           </h1>
-          <Flame className="w-12 h-12 text-yellow-300 animate-pulse" />
+          <IconComponent className="w-12 h-12 text-yellow-300 animate-pulse" />
         </div>
         
         <p className="text-xl md:text-2xl mb-8 font-light opacity-90">
@@ -169,7 +173,7 @@ export const BBQHeader: React.FC<BBQHeaderProps> = ({ potluck }) => {
             <span>{language === 'en' ? "You're Invited" : 'Du er inviteret'}</span>
           </div>
           <div className="flex items-center gap-2">
-            <Flame className="w-5 h-5" />
+            <IconComponent className="w-5 h-5" />
             <span>{language === 'en' ? 'Bring Your Appetite' : 'Tag din appetit med'}</span>
           </div>
         </div>
