@@ -104,6 +104,8 @@ function MainApp() {
   const [data, setData] = useState<BBQData>({});
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [slugInput, setSlugInput] = useState('');
+  const [slugError, setSlugError] = useState('');
   const [footerTitle, setFooterTitle] = useState('');
   const [footerText, setFooterText] = useState('');
 
@@ -157,18 +159,6 @@ function MainApp() {
         } else if (slug) {
           // If slug provided but no potluck found, redirect to home
           navigate('/', { replace: true });
-        } else {
-          // If no slug is provided and the default potluck is not found, fall back to first active potluck
-          const { data: fallbackPotlucks, error: fallbackError } = await supabase
-            .from('potlucks')
-            .select('*')
-            .eq('is_active', true)
-            .order('created_at', { ascending: false })
-            .limit(1);
-          
-          if (!fallbackError && fallbackPotlucks && fallbackPotlucks.length > 0) {
-            setPotluck(fallbackPotlucks[0]);
-          }
         }
       } catch (error) {
         console.error('Error loading potluck:', error);
@@ -338,6 +328,127 @@ function MainApp() {
       setData(newData);
     }
   }, [data]);
+
+  if (!potluck) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-red-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+        <div className="max-w-4xl mx-auto px-4 py-16 text-center">
+          <div className="mb-8 text-6xl">🎉 🍽️ 🥗</div>
+          <h1 className="text-4xl font-bold mb-6 text-gray-800 dark:text-white">
+            {language === 'en' ? 'Welcome to Potluck Organizer!' : 'Velkommen til Potluck Organizer!'}
+          </h1>
+          <p className="text-xl mb-8 text-gray-600 dark:text-gray-300">
+            {language === 'en' 
+              ? 'The easiest way to organize your next gathering.'
+              : 'Den nemmeste måde at organisere din næste sammenkomst.'}
+          </p>
+
+          <div className="max-w-md mx-auto mb-12">
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              setSlugError('');
+              if (!slugInput.trim()) {
+                setSlugError(language === 'en' ? 'Please enter a potluck code' : 'Indtast venligst en potluck-kode');
+                return;
+              }
+              
+              const { data: potlucks, error } = await supabase
+                .from('potlucks')
+                .select('*')
+                .eq('slug', slugInput.trim())
+                .eq('is_active', true)
+                .limit(1);
+
+              if (error) {
+                console.error('Error checking potluck:', error);
+                setSlugError(language === 'en' ? 'An error occurred' : 'Der opstod en fejl');
+                return;
+              }
+
+              if (!potlucks || potlucks.length === 0) {
+                setSlugError(language === 'en' ? 'Potluck not found' : 'Potluck blev ikke fundet');
+                return;
+              }
+
+              navigate(`/${slugInput.trim()}`);
+            }}>
+              <div className="flex flex-col gap-2 mb-4">
+                <label htmlFor="potluck-slug" className="text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {language === 'en' ? 'Enter your potluck code' : 'Indtast din potluck-kode'}
+                </label>
+                <input
+                  id="potluck-slug"
+                  type="text"
+                  value={slugInput}
+                  onChange={(e) => {
+                    setSlugInput(e.target.value);
+                    setSlugError('');
+                  }}
+                  placeholder={language === 'en' ? 'e.g., summer-bbq' : 'f.eks. sommer-grillfest'}
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                />
+                {slugError && (
+                  <p className="text-sm text-red-600 dark:text-red-400">{slugError}</p>
+                )}
+              </div>
+              <button
+                type="submit"
+                className="w-full px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-lg shadow-lg transition-colors duration-200"
+              >
+                {language === 'en' ? 'Join Potluck' : 'Deltag i Potluck'}
+              </button>
+            </form>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
+              <div className="text-4xl mb-4">🤝</div>
+              <h3 className="text-xl font-semibold mb-2 text-gray-800 dark:text-white">
+                {language === 'en' ? 'Easy to Share' : 'Nem at Dele'}
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                {language === 'en' 
+                  ? 'Share a simple link with your guests'
+                  : 'Del et simpelt link med dine gæster'}
+              </p>
+            </div>
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
+              <div className="text-4xl mb-4">📱</div>
+              <h3 className="text-xl font-semibold mb-2 text-gray-800 dark:text-white">
+                {language === 'en' ? 'Mobile Friendly' : 'Mobilvenlig'}
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                {language === 'en'
+                  ? 'Works great on all devices'
+                  : 'Fungerer perfekt på alle enheder'}
+              </p>
+            </div>
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
+              <div className="text-4xl mb-4">🔄</div>
+              <h3 className="text-xl font-semibold mb-2 text-gray-800 dark:text-white">
+                {language === 'en' ? 'Real-time Updates' : 'Realtidsopdateringer'}
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                {language === 'en'
+                  ? 'See changes instantly'
+                  : 'Se ændringer med det samme'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-center gap-4">
+            <button
+              onClick={() => navigate('/admin')}
+              className="px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-lg shadow-lg transition-colors duration-200 flex items-center gap-2"
+            >
+              <Settings className="w-5 h-5" />
+              {language === 'en' ? 'Open Admin Panel' : 'Åbn Adminpanel'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
