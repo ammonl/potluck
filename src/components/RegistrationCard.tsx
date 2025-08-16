@@ -215,7 +215,12 @@ export const RegistrationCard: React.FC<RegistrationCardProps> = ({
       
       <div className="mb-4 flex-grow overflow-hidden">
         <p 
-          className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed line-clamp-4 hover:line-clamp-none hover:overflow-visible hover:bg-gray-50 dark:hover:bg-gray-700 hover:p-2 hover:rounded hover:shadow-lg hover:z-10 hover:absolute hover:max-w-xs transition-all duration-200"
+          className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed overflow-hidden text-ellipsis hover:overflow-visible hover:bg-gray-50 dark:hover:bg-gray-700 hover:p-2 hover:rounded hover:shadow-lg hover:z-10 hover:absolute hover:max-w-xs transition-all duration-200"
+          style={{
+            display: '-webkit-box',
+            WebkitLineClamp: 4,
+            WebkitBoxOrient: 'vertical'
+          }}
           title={registration.description}
         >
           {registration.description}
