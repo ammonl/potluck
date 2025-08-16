@@ -181,7 +181,7 @@ export const RegistrationCard: React.FC<RegistrationCardProps> = ({
   }
 
   return (
-    <div className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-2 transform hover:scale-105 transition-all duration-300 flex flex-col min-h-[300px]`} style={{
+    <div className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-2 transform hover:scale-105 transition-all duration-300 flex flex-col h-[300px]`} style={{
       borderColor: getCategoryBorderColor(category.color_class)
     }}>
       <div className="flex items-start justify-between mb-4">
@@ -213,17 +213,22 @@ export const RegistrationCard: React.FC<RegistrationCardProps> = ({
         </div>
       </div>
       
-      <div className="mb-4 flex-grow">
-        <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">{registration.description}</p>
+      <div className="mb-4 flex-grow overflow-hidden">
+        <p 
+          className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed line-clamp-4 hover:line-clamp-none hover:overflow-visible hover:bg-gray-50 dark:hover:bg-gray-700 hover:p-2 hover:rounded hover:shadow-lg hover:z-10 hover:absolute hover:max-w-xs transition-all duration-200"
+          title={registration.description}
+        >
+          {registration.description}
+        </p>
       </div>
       
       <div className="mt-auto">
         {registration.gif_url && (
-          <div className="rounded-lg overflow-hidden mb-4">
+          <div className="rounded-lg overflow-hidden mb-2 flex-shrink-0">
             <img
               src={registration.gif_url}
               alt={registration.description}
-              className="w-full h-32 object-contain"
+              className="w-full h-16 object-contain"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = 'none';
               }}
@@ -231,7 +236,7 @@ export const RegistrationCard: React.FC<RegistrationCardProps> = ({
           </div>
         )}
         
-        <div className={`h-2 bg-gradient-to-r ${category.color_class} rounded-full`} />
+        <div className={`h-2 bg-gradient-to-r ${category.color_class} rounded-full flex-shrink-0`} />
       </div>
     </div>
   );
