@@ -233,7 +233,7 @@ export const RegistrationCard: React.FC<RegistrationCardProps> = ({
             <img
               src={registration.gif_url}
               alt={registration.description}
-              className="w-full h-24 object-contain"
+              className="w-full h-32 object-contain"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = 'none';
               }}
