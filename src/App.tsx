@@ -144,7 +144,7 @@ function MainApp() {
           query = query.eq('slug', slug).eq('is_active', true);
         } else {
           // Load the default potluck for home page
-          query = query.eq('slug', import.meta.env.DEFAULT_POTLUCK).eq('is_active', true);
+          query = query.eq('slug', import.meta.env.VITE_DEFAULT_POTLUCK).eq('is_active', true);
         }
         
         const { data: potlucks, error } = await query;
