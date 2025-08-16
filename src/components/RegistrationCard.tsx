@@ -181,7 +181,7 @@ export const RegistrationCard: React.FC<RegistrationCardProps> = ({
   }
 
   return (
-    <div className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-2 transform hover:scale-105 transition-all duration-300`} style={{
+    <div className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-2 transform hover:scale-105 transition-all duration-300 flex flex-col min-h-[300px]`} style={{
       borderColor: getCategoryBorderColor(category.color_class)
     }}>
       <div className="flex items-start justify-between mb-4">
@@ -213,24 +213,26 @@ export const RegistrationCard: React.FC<RegistrationCardProps> = ({
         </div>
       </div>
       
-      <div className="mb-4">
+      <div className="mb-4 flex-grow">
         <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">{registration.description}</p>
       </div>
       
-      {registration.gif_url && (
-        <div className="rounded-lg overflow-hidden">
-          <img
-            src={registration.gif_url}
-            alt={registration.description}
-            className="w-full h-32 object-contain bg-gray-50 dark:bg-gray-700"
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = 'none';
-            }}
-          />
-        </div>
-      )}
-      
-      <div className={`mt-4 h-2 bg-gradient-to-r ${category.color_class} rounded-full`} />
+      <div className="mt-auto">
+        {registration.gif_url && (
+          <div className="rounded-lg overflow-hidden mb-4">
+            <img
+              src={registration.gif_url}
+              alt={registration.description}
+              className="w-full h-32 object-contain bg-gray-50 dark:bg-gray-700"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
+            />
+          </div>
+        )}
+        
+        <div className={`h-2 bg-gradient-to-r ${category.color_class} rounded-full`} />
+      </div>
     </div>
   );
 };
