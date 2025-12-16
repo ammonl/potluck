@@ -53,6 +53,21 @@ export const RegistrationCard: React.FC<RegistrationCardProps> = ({
     
     return getTranslation(language, 'describeBringing');
   };
+
+  const getDisplayTitle = () => {
+    const rawPlaceholder = placeholder || (language === 'en' ? category.placeholder_en : category.placeholder_da);
+    
+    if (rawPlaceholder && rawPlaceholder.trim()) {
+      const items = rawPlaceholder.split(',').map((item: string) => item.trim()).filter(Boolean);
+      if (items.length > 0) {
+        const index = ((slotNumber || 1) - 1) % items.length;
+        const prefix = language === 'da' ? 'f.eks. ' : 'Ex. ';
+        return `${prefix}${items[index]}`;
+      }
+    }
+
+    return `${singularTitle} ${slotNumber ? `#${slotNumber}` : ''}`;
+  };
   const handleSave = async () => {
     // If both name and description are empty for an existing registration, delete it
     if (registration && !name.trim() && !description.trim()) {
@@ -169,7 +184,7 @@ export const RegistrationCard: React.FC<RegistrationCardProps> = ({
               {category.icon}
             </div>
           <h3 className="text-lg font-bold text-gray-600 dark:text-gray-300 mb-2">
-            {singularTitle} {slotNumber ? `#${slotNumber}` : ''}
+            {getDisplayTitle()}
           </h3>
           <p className="text-gray-500 dark:text-gray-400">
             {getTranslation(language, 'clickToSignUp')}
