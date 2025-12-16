@@ -18,8 +18,11 @@ interface Potluck {
   event_datetime: string;
   is_active: boolean;
   header_background?: string | null;
-  header_overlay_color?: string;
+  gradient_from?: string;
+  gradient_to?: string;
   header_overlay_opacity?: number;
+  organizer_name?: string | null;
+  organizer_email?: string | null;
   footer_emojis?: string | null;
   created_at?: string;
   updated_at?: string;
@@ -49,8 +52,9 @@ export const PotluckEditPage: React.FC<PotluckEditPageProps> = ({ onBack }) => {
     event_datetime: '',
     is_active: true,
     header_background: '/background.JPG',
-    header_overlay_color: 'black',
-    header_overlay_opacity: 0.20,
+    gradient_from: '#ea580c',
+    gradient_to: '#ca8a04',
+    header_overlay_opacity: 0.9,
     organizer_name: '',
     organizer_email: '',
     footer_emojis: '🍕 🍝 🍰 🥤 🎊 🎈 🎉',
@@ -95,8 +99,9 @@ export const PotluckEditPage: React.FC<PotluckEditPageProps> = ({ onBack }) => {
           event_datetime: data.event_datetime ? new Date(data.event_datetime).toISOString().slice(0, 16) : '',
           is_active: data.is_active,
           header_background: data.header_background || '/background.JPG',
-          header_overlay_color: data.header_overlay_color || 'black',
-          header_overlay_opacity: data.header_overlay_opacity ?? 0.20,
+          gradient_from: data.gradient_from || '#ea580c',
+          gradient_to: data.gradient_to || '#ca8a04',
+          header_overlay_opacity: data.header_overlay_opacity ?? 0.9,
           organizer_name: data.organizer_name || '',
           organizer_email: data.organizer_email || '',
           footer_emojis: data.footer_emojis || '',
@@ -553,8 +558,8 @@ export const PotluckEditPage: React.FC<PotluckEditPageProps> = ({ onBack }) => {
                           <div 
                             className="absolute inset-0 flex items-center justify-center"
                             style={{
-                              backgroundColor: formData.header_overlay_color || 'black',
-                              opacity: formData.header_overlay_opacity || 0.20
+                              background: `linear-gradient(to right, ${formData.gradient_from || '#ea580c'}, ${formData.gradient_to || '#ca8a04'})`,
+                              opacity: formData.header_overlay_opacity || 0.9
                             }}
                           >
                             <div className="text-white text-center">
@@ -568,50 +573,46 @@ export const PotluckEditPage: React.FC<PotluckEditPageProps> = ({ onBack }) => {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Header Overlay Color
-                  </label>
-                  <div className="space-y-3">
-                    <input
-                      type="text"
-                      value={formData.header_overlay_color || ''}
-                      onChange={(e) => setFormData(prev => ({ ...prev, header_overlay_color: e.target.value }))}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                      placeholder="black, #000000, rgb(0,0,0)"
-                    />
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
-                      <p className="mb-2">Enter a CSS color value. Examples:</p>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setFormData(prev => ({ ...prev, header_overlay_color: 'black' }))}
-                          className="text-left px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded text-xs hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                        >
-                          black
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setFormData(prev => ({ ...prev, header_overlay_color: '#1f2937' }))}
-                          className="text-left px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded text-xs hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                        >
-                          #1f2937
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setFormData(prev => ({ ...prev, header_overlay_color: '#7c2d12' }))}
-                          className="text-left px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded text-xs hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                        >
-                          #7c2d12
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setFormData(prev => ({ ...prev, header_overlay_color: '#1e40af' }))}
-                          className="text-left px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded text-xs hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                        >
-                          #1e40af
-                        </button>
-                      </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Gradient From Color
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="color"
+                        value={formData.gradient_from || '#ea580c'}
+                        onChange={(e) => setFormData(prev => ({ ...prev, gradient_from: e.target.value }))}
+                        className="h-10 w-10 p-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={formData.gradient_from || ''}
+                        onChange={(e) => setFormData(prev => ({ ...prev, gradient_from: e.target.value }))}
+                        className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                        placeholder="#ea580c"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Gradient To Color
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="color"
+                        value={formData.gradient_to || '#ca8a04'}
+                        onChange={(e) => setFormData(prev => ({ ...prev, gradient_to: e.target.value }))}
+                        className="h-10 w-10 p-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={formData.gradient_to || ''}
+                        onChange={(e) => setFormData(prev => ({ ...prev, gradient_to: e.target.value }))}
+                        className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                        placeholder="#ca8a04"
+                      />
                     </div>
                   </div>
                 </div>

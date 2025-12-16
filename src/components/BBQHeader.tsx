@@ -16,7 +16,8 @@ interface Potluck {
   event_datetime: string;
   is_active: boolean;
   header_background?: string | null;
-  header_overlay_color?: string;
+  gradient_from?: string;
+  gradient_to?: string;
   header_overlay_opacity?: number;
   icon?: string;
 }
@@ -71,33 +72,31 @@ export const BBQHeader: React.FC<BBQHeaderProps> = ({ potluck }) => {
     return formatDateTime(potluck.event_datetime, language);
   };
 
-  const getOverlayStyle = () => {
-    const color = potluck?.header_overlay_color || 'black';
-    const opacity = potluck?.header_overlay_opacity ?? 0.20;
+  const getGradientStyle = () => {
+    const from = potluck?.gradient_from || '#ea580c'; // orange-600
+    const to = potluck?.gradient_to || '#ca8a04'; // yellow-600
+    const opacity = potluck?.header_overlay_opacity ?? 0.9;
     
-    // Handle different color formats
-    if (color.startsWith('#') || color.startsWith('rgb') || color.startsWith('hsl')) {
-      return { backgroundColor: color, opacity };
-    } else {
-      // Named colors or other formats
-      return { backgroundColor: color, opacity };
-    }
+    return {
+      background: `linear-gradient(to right, ${from}, ${to})`,
+      opacity
+    };
   };
 
   const IconComponent = getIconComponent(potluck?.icon || 'Flame');
 
   return (
-    <div className="bg-gradient-to-r from-orange-600 via-red-600 to-yellow-600 dark:from-orange-800 dark:via-red-800 dark:to-yellow-800 text-white py-16 px-4 relative overflow-hidden">
+    <div className="text-white py-16 px-4 relative overflow-hidden">
       {/* Background flag image */}
       <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-20"
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat z-0"
         style={{ backgroundImage: `url(${potluck?.header_background || '/background.JPG'})` }}
       ></div>
       <div 
-        className="absolute inset-0 dark:opacity-[0.4]" 
-        style={getOverlayStyle()}
+        className="absolute inset-0 z-10" 
+        style={getGradientStyle()}
       ></div>
-      <div className="relative max-w-6xl mx-auto text-center">
+      <div className="relative max-w-6xl mx-auto text-center z-20">
 
         
         <div className="flex justify-center items-center gap-4 mb-6">
