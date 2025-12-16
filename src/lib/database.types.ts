@@ -90,17 +90,6 @@ export interface Database {
           category: string
           slot_number: number | null
           gif_url: string | null
-          footer_en: string
-          footer_da: string
-          event_datetime: string
-          is_active: boolean
-          header_background: string | null
-          header_overlay_color: string
-          header_overlay_opacity: number
-          footer_emojis: string | null
-          organizer_name: string | null
-          organizer_email: string | null
-          icon: string
           created_at: string
           updated_at: string
           potluck_id: string
@@ -112,17 +101,6 @@ export interface Database {
           category: string
           slot_number?: number | null
           gif_url?: string | null
-          footer_en?: string
-          footer_da?: string
-          event_datetime?: string
-          is_active?: boolean
-          header_background?: string | null
-          header_overlay_color?: string
-          header_overlay_opacity?: number
-          footer_emojis?: string | null
-          organizer_name?: string | null
-          organizer_email?: string | null
-          icon?: string
           created_at?: string
           updated_at?: string
           potluck_id: string
@@ -134,12 +112,48 @@ export interface Database {
           category?: string
           slot_number?: number | null
           gif_url?: string | null
+          created_at?: string
+          updated_at?: string
+          potluck_id?: string
+        }
+      }
+      potlucks: {
+        Row: {
+          id: string
+          slug: string
+          title_en: string
+          title_da: string
+          subtitle_en: string
+          subtitle_da: string
+          footer_en: string
+          footer_da: string
+          event_datetime: string
+          is_active: boolean
+          header_background: string | null
+          gradient_from: string
+          gradient_to: string
+          header_overlay_opacity: number
+          footer_emojis: string | null
+          organizer_name: string | null
+          organizer_email: string | null
+          icon: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          slug: string
+          title_en: string
+          title_da: string
+          subtitle_en: string
+          subtitle_da: string
           footer_en?: string
           footer_da?: string
           event_datetime?: string
           is_active?: boolean
           header_background?: string | null
-          header_overlay_color?: string
+          gradient_from?: string
+          gradient_to?: string
           header_overlay_opacity?: number
           footer_emojis?: string | null
           organizer_name?: string | null
@@ -147,7 +161,28 @@ export interface Database {
           icon?: string
           created_at?: string
           updated_at?: string
-          potluck_id?: string
+        }
+        Update: {
+          id?: string
+          slug?: string
+          title_en?: string
+          title_da?: string
+          subtitle_en?: string
+          subtitle_da?: string
+          footer_en?: string
+          footer_da?: string
+          event_datetime?: string
+          is_active?: boolean
+          header_background?: string | null
+          gradient_from?: string
+          gradient_to?: string
+          header_overlay_opacity?: number
+          footer_emojis?: string | null
+          organizer_name?: string | null
+          organizer_email?: string | null
+          icon?: string
+          created_at?: string
+          updated_at?: string
         }
       }
     }
