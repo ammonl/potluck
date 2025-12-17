@@ -345,7 +345,7 @@ export const PotluckEditPage: React.FC<PotluckEditPageProps> = ({ onBack }) => {
   }
 
   const tabs = [
-    { id: 'metadata' as const, label: 'Metadata', icon: <Settings className="w-4 h-4" /> },
+    { id: 'metadata' as const, label: 'Details', icon: <Settings className="w-4 h-4" /> },
     { id: 'categories' as const, label: 'Categories', icon: <List className="w-4 h-4" /> },
     { id: 'registrations' as const, label: 'Registrations', icon: <Users className="w-4 h-4" /> }
   ];
@@ -413,7 +413,7 @@ export const PotluckEditPage: React.FC<PotluckEditPageProps> = ({ onBack }) => {
         <div className="bg-white dark:bg-gray-700 rounded-b-lg rounded-tr-lg border border-gray-200 dark:border-gray-600 shadow-lg p-6">
           {activeTab === 'metadata' && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6">Potluck Metadata</h2>
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6">Potluck Details</h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>

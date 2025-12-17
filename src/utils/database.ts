@@ -210,7 +210,7 @@ export const loadPotluckData = async (potluckId?: string): Promise<PotluckData> 
       .order('created_at', { ascending: true });
 
     if (error) {
-      console.error('Error loading BBQ data:', error);
+      console.error('Error loading potluck data:', error);
       return getInitialData();
     }
 
@@ -277,7 +277,7 @@ export const loadPotluckData = async (potluckId?: string): Promise<PotluckData> 
 
     return data as PotluckData;
   } catch (error) {
-    console.error('Error loading BBQ data:', error);
+    console.error('Error loading potluck data:', error);
     return getInitialData();
   }
 };

@@ -455,7 +455,7 @@ function MainApp() {
       <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-red-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4">🍲</div>
-          <p className="text-xl text-gray-600 dark:text-gray-300">{getTranslation(language, 'loadingBBQ')}</p>
+          <p className="text-xl text-gray-600 dark:text-gray-300">{getTranslation(language, 'loadingSignups')}</p>
         </div>
       </div>
     );
