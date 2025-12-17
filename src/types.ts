@@ -43,6 +43,6 @@ export interface MainItem {
   gif_url: string;
 }
 
-export interface BBQData {
+export interface PotluckData {
   [key: string]: (Registration | null)[] | Registration[];
 }

@@ -3,8 +3,8 @@ import { Routes, Route, useNavigate, useLocation, useParams } from 'react-router
 import { supabase } from './lib/supabase';
 import { Settings } from 'lucide-react';
 import { AuthGuard } from './components/AuthGuard';
-import { BBQData, Registration, Category } from './types';
-import { loadBBQData, hasIncompleteEntries, subscribeToChanges, saveRegistration, deleteRegistration, loadPotluckCategories } from './utils/database';
+import { PotluckData, Registration, Category } from './types';
+import { loadPotluckData, hasIncompleteEntries, subscribeToChanges, saveRegistration, deleteRegistration, loadPotluckCategories } from './utils/database';
 import { useLanguage } from './contexts/LanguageContext';
 import { getTranslation } from './utils/translations';
 import { BBQHeader } from './components/BBQHeader';
@@ -101,7 +101,7 @@ function MainApp() {
   const { slug } = useParams<{ slug?: string }>();
   const [potluck, setPotluck] = useState<Potluck | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [data, setData] = useState<BBQData>({});
+  const [data, setData] = useState<PotluckData>({});
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [slugInput, setSlugInput] = useState('');
@@ -187,7 +187,7 @@ function MainApp() {
       if (!potluck) return;
       
       setIsLoading(true);
-      const initialData = await loadBBQData(potluck.id);
+      const initialData = await loadPotluckData(potluck.id);
       setData(initialData);
       setIsLoading(false);
     };

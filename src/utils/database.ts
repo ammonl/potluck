@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import { Registration, BBQData, Category, PotluckCategory } from '../types';
+import { Registration, PotluckData, Category, PotluckCategory } from '../types';
 import { fetchGiphyGif } from './giphy';
 import { extractPotluckItem } from './openai';
 
@@ -193,7 +193,7 @@ export const getDefaultCategories = (): Category[] => [
   }
 ];
 
-export const loadBBQData = async (potluckId?: string): Promise<BBQData> => {
+export const loadPotluckData = async (potluckId?: string): Promise<PotluckData> => {
   try {
     if (!potluckId) {
       return getInitialData();
@@ -275,7 +275,7 @@ export const loadBBQData = async (potluckId?: string): Promise<BBQData> => {
       }
     });
 
-    return data as BBQData;
+    return data as PotluckData;
   } catch (error) {
     console.error('Error loading BBQ data:', error);
     return getInitialData();
@@ -431,10 +431,10 @@ const reorganizeSlots = async (potluckId: string, categoryId: string): Promise<v
   }
 };
 
-export const getInitialData = (): BBQData => ({
+export const getInitialData = (): PotluckData => ({
 });
 
-export const hasIncompleteEntries = (data: BBQData): boolean => {
+export const hasIncompleteEntries = (data: PotluckData): boolean => {
   if (!data) return false;
   
   const allEntries: Registration[] = [];
@@ -455,7 +455,7 @@ export const hasIncompleteEntries = (data: BBQData): boolean => {
   );
 };
 
-export const subscribeToChanges = (callback: (data: BBQData) => void, potluckId?: string) => {
+export const subscribeToChanges = (callback: (data: PotluckData) => void, potluckId?: string) => {
   const channel = supabase
     .channel('potluck_registrations_changes')
     .on(
@@ -467,7 +467,7 @@ export const subscribeToChanges = (callback: (data: BBQData) => void, potluckId?
       },
       async () => {
         // Reload data when any change occurs
-        const newData = await loadBBQData(potluckId);
+        const newData = await loadPotluckData(potluckId);
         callback(newData);
       }
     )
