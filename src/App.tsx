@@ -7,7 +7,7 @@ import { PotluckData, Registration, Category } from './types';
 import { loadPotluckData, hasIncompleteEntries, subscribeToChanges, saveRegistration, deleteRegistration, loadPotluckCategories } from './utils/database';
 import { useLanguage } from './contexts/LanguageContext';
 import { getTranslation } from './utils/translations';
-import { PotluckHeader } from './components/BBQHeader';
+import { PotluckHeader } from './components/PotluckHeader';
 import { CategorySection } from './components/CategorySection';
 import { AdditionalSection } from './components/AdditionalSection';
 import { AdminPage } from './components/AdminPage';
