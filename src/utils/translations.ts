@@ -9,6 +9,7 @@ export const translations = {
     describeBringing: "Describe what you're bringing...",
     
     // Buttons and actions
+    save: "Save",
     saving: "Saving...",
     cancel: "Cancel",
     clear: "Clear",
@@ -29,6 +30,7 @@ export const translations = {
     describeBringing: "Beskriv hvad du medbringer...",
     
     // Buttons and actions
+    save: "Gem",
     saving: "Gemmer...",
     cancel: "Annuller",
     clear: "Ryd",
