@@ -100,18 +100,18 @@ export const BBQHeader: React.FC<BBQHeaderProps> = ({ potluck }) => {
 
         
         <div className="flex justify-center items-center gap-4 mb-6">
-          <IconComponent className="w-12 h-12 text-yellow-300 animate-pulse" />
-          <h1 className="text-5xl md:text-7xl font-bold">
+          <IconComponent className="w-12 h-12 text-yellow-300 animate-pulse drop-shadow-lg" />
+          <h1 className="text-5xl md:text-7xl font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
             {getTitle()}
           </h1>
-          <IconComponent className="w-12 h-12 text-yellow-300 animate-pulse" />
+          <IconComponent className="w-12 h-12 text-yellow-300 animate-pulse drop-shadow-lg" />
         </div>
         
-        <p className="text-xl md:text-2xl mb-8 font-light opacity-90">
+        <p className="text-xl md:text-2xl mb-8 font-light opacity-100 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
           {getSubtitle()}
         </p>
         
-        <div className="flex flex-wrap justify-center gap-8 text-sm md:text-base">
+        <div className="flex flex-wrap justify-center gap-8 text-sm md:text-base drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
           <div className="flex items-center gap-2">
             <Calendar className="w-5 h-5" />
             <span>{getFormattedDate()}</span>
