@@ -54,20 +54,7 @@ export const RegistrationCard: React.FC<RegistrationCardProps> = ({
     return getTranslation(language, 'describeBringing');
   };
 
-  const getDisplayTitle = () => {
-    const rawPlaceholder = placeholder || (language === 'en' ? category.placeholder_en : category.placeholder_da);
-    
-    if (rawPlaceholder && rawPlaceholder.trim()) {
-      const items = rawPlaceholder.split(',').map((item: string) => item.trim()).filter(Boolean);
-      if (items.length > 0) {
-        const index = ((slotNumber || 1) - 1) % items.length;
-        const prefix = language === 'da' ? 'f.eks. ' : 'Ex. ';
-        return `${prefix}${items[index]}`;
-      }
-    }
 
-    return `${singularTitle} ${slotNumber ? `#${slotNumber}` : ''}`;
-  };
   const handleSave = async () => {
     // If both name and description are empty for an existing registration, delete it
     if (registration && !name.trim() && !description.trim()) {
@@ -184,7 +171,7 @@ export const RegistrationCard: React.FC<RegistrationCardProps> = ({
               {category.icon}
             </div>
           <h3 className="text-lg font-bold text-gray-600 dark:text-gray-300 mb-2">
-            {getDisplayTitle()}
+            {isAdditional ? singularTitle : `${singularTitle} ${slotNumber ? `#${slotNumber}` : ''}`}
           </h3>
           <p className="text-gray-500 dark:text-gray-400">
             {getTranslation(language, 'clickToSignUp')}
@@ -203,10 +190,18 @@ export const RegistrationCard: React.FC<RegistrationCardProps> = ({
         <div className="flex items-center gap-2">
           <span className="text-2xl">{category.icon}</span>
           <div>
-            <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">
-              {isAdditional ? singularTitle : `${singularTitle} ${slotNumber ? `#${slotNumber}` : ''}`}
+            <h3 
+              className="text-lg font-bold text-gray-800 dark:text-gray-100 overflow-hidden"
+              style={{
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical'
+              }}
+              title={registration.description}
+            >
+              {registration.description}
             </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">{getTranslation(language, 'by')} {registration.name}</p>
+            <p className="text-base text-gray-600 dark:text-gray-400">{getTranslation(language, 'by')} {registration.name}</p>
           </div>
         </div>
         
@@ -229,16 +224,8 @@ export const RegistrationCard: React.FC<RegistrationCardProps> = ({
       </div>
       
       <div className="mb-4 flex-grow overflow-hidden">
-        <p 
-          className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed overflow-hidden text-ellipsis hover:overflow-visible hover:bg-gray-50 dark:hover:bg-gray-700 hover:p-2 hover:rounded hover:shadow-lg hover:z-10 hover:absolute hover:max-w-xs transition-all duration-200"
-          style={{
-            display: '-webkit-box',
-            WebkitLineClamp: 4,
-            WebkitBoxOrient: 'vertical'
-          }}
-          title={registration.description}
-        >
-          {registration.description}
+        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+          {isAdditional ? singularTitle : `${singularTitle} ${slotNumber ? `#${slotNumber}` : ''}`}
         </p>
       </div>
       
