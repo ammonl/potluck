@@ -22,11 +22,11 @@ interface Potluck {
   icon?: string;
 }
 
-interface BBQHeaderProps {
+interface PotluckHeaderProps {
   potluck: Potluck | null;
 }
 
-export const BBQHeader: React.FC<BBQHeaderProps> = ({ potluck }) => {
+export const BBQHeader: React.FC<PotluckHeaderProps> = ({ potluck }) => {
   const { isDarkMode, toggleDarkMode } = useDarkMode();
   const { language, toggleLanguage } = useLanguage();
 
