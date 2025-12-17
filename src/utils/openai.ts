@@ -1,13 +1,17 @@
 import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
+const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+
+// Only instantiate the client if we have an API key, otherwise set to null
+// This prevents the application from crashing on load if the key is missing
+const openai = apiKey ? new OpenAI({
+  apiKey: apiKey,
   dangerouslyAllowBrowser: true
-});
+}) : null;
 
 export const extractPotluckItem = async (description: string): Promise<string> => {
   try {
-    if (!import.meta.env.VITE_OPENAI_API_KEY) {
+    if (!openai) {
       console.warn('OpenAI API key not found, using original description');
       return description;
     }
