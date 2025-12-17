@@ -7,7 +7,7 @@ import { PotluckData, Registration, Category } from './types';
 import { loadPotluckData, hasIncompleteEntries, subscribeToChanges, saveRegistration, deleteRegistration, loadPotluckCategories } from './utils/database';
 import { useLanguage } from './contexts/LanguageContext';
 import { getTranslation } from './utils/translations';
-import { BBQHeader } from './components/BBQHeader';
+import { PotluckHeader } from './components/BBQHeader';
 import { CategorySection } from './components/CategorySection';
 import { AdditionalSection } from './components/AdditionalSection';
 import { AdminPage } from './components/AdminPage';
@@ -463,7 +463,7 @@ function MainApp() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-red-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <BBQHeader potluck={potluck} />
+      <PotluckHeader potluck={potluck} />
       
       {hasUnsavedChanges && (
         <div className="bg-yellow-100 dark:bg-yellow-900 border-l-4 border-yellow-500 text-yellow-700 dark:text-yellow-300 p-4 mx-4 mt-4 rounded-r-lg">

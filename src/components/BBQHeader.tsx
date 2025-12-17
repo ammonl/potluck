@@ -26,7 +26,7 @@ interface PotluckHeaderProps {
   potluck: Potluck | null;
 }
 
-export const BBQHeader: React.FC<PotluckHeaderProps> = ({ potluck }) => {
+export const PotluckHeader: React.FC<PotluckHeaderProps> = ({ potluck }) => {
   const { isDarkMode, toggleDarkMode } = useDarkMode();
   const { language, toggleLanguage } = useLanguage();
 
