@@ -9,7 +9,6 @@ import { useLanguage } from './contexts/LanguageContext';
 import { getTranslation } from './utils/translations';
 import { PotluckHeader } from './components/PotluckHeader';
 import { CategorySection } from './components/CategorySection';
-import { AdditionalSection } from './components/AdditionalSection';
 import { AdminPage } from './components/AdminPage';
 import { PrivacyPage } from './components/PrivacyPage';
 import { TermsPage } from './components/TermsPage';
@@ -281,54 +280,6 @@ function MainApp() {
     }
   }, [data, potluck]);
 
-  const handleAddAdditional = useCallback(async (registration: Registration): Promise<void> => {
-    if (!potluck) return;
-    
-    const updatedRegistration = {
-      ...registration,
-      category: categories.find(c => c.title_en === 'Additional Items')?.id || 'additional',
-      slot_number: null
-    };
-    
-    const saved = await saveRegistration(updatedRegistration, potluck.id);
-    if (saved) {
-      const newData = { ...data };
-      (newData.additional as Registration[] || []).push(saved);
-      setData(newData);
-    }
-  }, [data, potluck, categories]);
-
-  const handleUpdateAdditional = useCallback(async (index: number, registration: Registration): Promise<void> => {
-    if (!potluck) return;
-    
-    const updatedRegistration = {
-      ...registration,
-      category: categories.find(c => c.title_en === 'Additional Items')?.id || 'additional',
-      slot_number: null
-    };
-    
-    const saved = await saveRegistration(updatedRegistration, potluck.id);
-    if (saved) {
-      const newData = { ...data };
-      const additional = newData.additional as Registration[] || [];
-      additional[index] = saved;
-      newData.additional = additional;
-      setData(newData);
-    }
-  }, [data, potluck, categories]);
-
-  const handleRemoveAdditional = useCallback(async (index: number) => {
-    const additional = data.additional as Registration[] || [];
-    const registration = additional[index];
-    if (registration && await deleteRegistration(registration.id)) {
-      const newData = { ...data };
-      const updatedAdditional = [...additional];
-      updatedAdditional.splice(index, 1);
-      newData.additional = updatedAdditional;
-      setData(newData);
-    }
-  }, [data]);
-
   if (!potluck) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-red-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
@@ -479,20 +430,6 @@ function MainApp() {
       
       <div className="max-w-7xl mx-auto px-4 py-12">
         {categories.map((category) => {
-          if (category.title_en === 'Additional Items') {
-            return (
-              <AdditionalSection
-                key={category.id}
-                items={data.additional as Registration[] || []}
-                onAddItem={handleAddAdditional}
-                onUpdateItem={handleUpdateAdditional}
-                onRemoveItem={handleRemoveAdditional}
-                category={category}
-                language={language}
-              />
-            );
-          }
-
           // Get the appropriate data and handlers for this category
           const getCategoryData = () => {
             const key = getCategoryKey(category.id);
@@ -596,15 +533,6 @@ function MainApp() {
 
 // Helper function to convert category ID to data key (same as in database.ts)
 const getCategoryKey = (categoryId: string): string => {
-  // For backward compatibility, we'll use a simple mapping based on common patterns
-  if (categoryId.includes('main') || categoryId === 'main-dish') return 'mainDishes';
-  if (categoryId.includes('side') || categoryId === 'side-dish') return 'sideDishes';
-  if (categoryId.includes('dessert')) return 'desserts';
-  if (categoryId.includes('drink')) return 'drinks';
-  if (categoryId.includes('additional')) return 'additional';
-  if (categoryId.includes('other')) return 'other';
-  
-  // For new categories, create a camelCase key from the ID
   return categoryId.replace(/-/g, '').toLowerCase();
 };
 

@@ -872,26 +872,26 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Placeholders, comma separated (English)
+                Description (English)
               </label>
               <input
                 type="text"
                 value={formData.placeholder_en}
                 onChange={(e) => setFormData(prev => ({ ...prev, placeholder_en: e.target.value }))}
                 className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                placeholder="Optional placeholder text, comma separated"
+                placeholder="Optional description"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Placeholders, comma separated (Danish)
+                Description (Danish)
               </label>
               <input
                 type="text"
                 value={formData.placeholder_da}
                 onChange={(e) => setFormData(prev => ({ ...prev, placeholder_da: e.target.value }))}
                 className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                placeholder="Valgfri pladsholder tekst, kommasepareret"
+                placeholder="Valgfri beskrivelse"
               />
             </div>
           </div>
