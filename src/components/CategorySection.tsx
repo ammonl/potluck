@@ -22,10 +22,12 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
   potluckIcon
 }) => {
   const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
 
   // Update titles when language or category changes
   useEffect(() => {
     setTitle(language === 'en' ? category.title_en : category.title_da);
+    setDescription(language === 'en' ? category.placeholder_en : category.placeholder_da);
   }, [category, language]);
 
   const getPlaceholder = (index: number) => {
@@ -45,7 +47,12 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
     <div className="mb-12">
       <div className="flex items-center gap-3 mb-6">
         <span className="text-4xl">{category.icon}</span>
-        <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100">{title}</h2>
+        <div>
+          <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100">{title}</h2>
+          {description && (
+            <p className="text-gray-600 dark:text-gray-400 text-lg">{description}</p>
+          )}
+        </div>
         <div className={`flex-1 h-1 bg-gradient-to-r ${category.color_class} rounded-full ml-4`}></div>
       </div>
       
