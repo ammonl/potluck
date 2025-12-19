@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { Registration, PotluckData, Category, PotluckCategory } from '../types';
 import { fetchGiphyGif } from './giphy';
-import { extractPotluckItem } from './openai';
+import { extractPotluckItem, generateRandomFoodItem } from './openai';
 
 export const loadPotluckCategories = async (potluckId: string): Promise<PotluckCategory[]> => {
   try {
@@ -304,6 +304,14 @@ export const saveRegistration = async (registration: Registration, potluckId: st
     if (!gifUrl && registration.description) {
       const foodItem = await extractPotluckItem(registration.description);
       gifUrl = await fetchGiphyGif(foodItem);
+
+      // If first attempt fails, try with a random food/drink word
+      if (!gifUrl) {
+        const randomItem = await generateRandomFoodItem();
+        if (randomItem) {
+          gifUrl = await fetchGiphyGif(randomItem);
+        }
+      }
     }
 
     const registrationData = {

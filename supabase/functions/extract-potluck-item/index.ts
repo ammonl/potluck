@@ -24,13 +24,21 @@ serve(async (req) => {
       apiKey: apiKey,
     });
 
-    const { description } = await req.json()
+    const { description, mode } = await req.json()
 
-    if (!description) {
+    if (mode !== 'random' && !description) {
       return new Response(
         JSON.stringify({ error: 'Description is required' }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       )
+    }
+
+    let systemPrompt = "You are a helpful assistant that extracts the main food, drink, or other potluck item from a description. Return only the primary food, drink, or other potluck item name, nothing else. If multiple items are mentioned, return the most prominent one. Keep it simple and searchable (e.g., 'pizza', 'napkins', 'cookies', 'beer', 'salad'). If the description is in Danish, return the result in English.";
+    let userPrompt = `Extract the main food, drink, or other potluck item from this description: "${description}"`;
+
+    if (mode === 'random') {
+      systemPrompt = "You are a helpful assistant. Return a single random common food or drink word that would make for a fun or appetizing GIF. Keep it simple and searchable (e.g. 'pizza', 'beer', 'cake', 'tacos', 'burger'). Return only the word, nothing else.";
+      userPrompt = "Give me a random food or drink word.";
     }
 
     const response = await openai.chat.completions.create({
@@ -38,15 +46,15 @@ serve(async (req) => {
       messages: [
         {
           role: "system",
-          content: "You are a helpful assistant that extracts the main food, drink, or other potluck item from a description. Return only the primary food, drink, or other potluck item name, nothing else. If multiple items are mentioned, return the most prominent one. Keep it simple and searchable (e.g., 'pizza', 'napkins', 'cookies', 'beer', 'salad'). If the description is in Danish, return the result in English."
+          content: systemPrompt
         },
         {
           role: "user",
-          content: `Extract the main food, drink, or other potluck item from this description: "${description}"`
+          content: userPrompt
         }
       ],
       max_tokens: 20,
-      temperature: 0.3
+      temperature: mode === 'random' ? 0.9 : 0.3 // Higher temperature for variety in random mode
     });
 
     const extractedItem = response.choices[0]?.message?.content?.trim();
