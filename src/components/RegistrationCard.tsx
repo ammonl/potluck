@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useEffect } from 'react';
-import { Edit2, Save, X } from 'lucide-react';
+import { Edit2, Save, X, Trash2 } from 'lucide-react';
 import { Registration, Category } from '../types';
 import { Language, getTranslation } from '../utils/translations';
 import { getCategoryBorderColor } from '../utils/colors';
@@ -41,14 +41,27 @@ export const RegistrationCard: React.FC<RegistrationCardProps> = ({
     setSingularTitle(language === 'en' ? category.singular_en : category.singular_da);
   }, [category, language]);
 
+  // Update local state when registration prop changes
+  useEffect(() => {
+    if (registration) {
+      setName(registration.name);
+      setDescription(registration.description);
+    } else {
+      // Only reset if we are NOT currently editing a new item, or if we want to ensure blank cards are blank
+      // However, resetting on null registration is generally safe as it likely means we went from filled -> empty
+      setName('');
+      setDescription('');
+    }
+  }, [registration]);
+
   const getPlaceholderText = () => {
     if (placeholder) {
-      return `${language === 'da' ? 'f.eks.' : 'e.g.'}, ${placeholder}`;
+      return placeholder;
     }
     
     const categoryPlaceholder = language === 'en' ? category.placeholder_en : category.placeholder_da;
     if (categoryPlaceholder.trim()) {
-      return `${language === 'da' ? 'f.eks.' : 'e.g.'}, ${categoryPlaceholder}`;
+      return categoryPlaceholder;
     }
     
     return getTranslation(language, 'describeBringing');
@@ -79,6 +92,10 @@ export const RegistrationCard: React.FC<RegistrationCardProps> = ({
       };
       
       await onSave(newRegistration);
+      // Clear data - if item stays here, useEffect will repopulate it.
+      // If it moves (gravity), this ensures the slot is clean.
+      setName('');
+      setDescription('');
       setIsEditing(false);
     } catch (error) {
       console.error('Error saving registration:', error);
@@ -98,18 +115,59 @@ export const RegistrationCard: React.FC<RegistrationCardProps> = ({
     setIsEditing(false);
   };
 
+  const handleRemove = () => {
+    if (onRemove) {
+      onRemove();
+      setName('');
+      setDescription('');
+      setIsEditing(false);
+    }
+  };
+
   const IconComponent = getIconComponent(potluckIcon || 'Flame');
+
+  // Handle escape key to cancel editing
+  useEffect(() => {
+    if (isEditing) {
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          if (registration) {
+            setName(registration.name);
+            setDescription(registration.description);
+          } else {
+            setName('');
+            setDescription('');
+          }
+          setIsEditing(false);
+        }
+      };
+
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [isEditing, registration]);
 
   if (isEditing) {
     return (
       <div className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-2 transform hover:scale-105 transition-all duration-300`} style={{
         borderColor: getCategoryBorderColor(category.color_class)
       }}>
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-2xl">{category.icon}</span>
-          <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">
-            {isAdditional ? singularTitle : `${singularTitle} ${slotNumber ? `#${slotNumber}` : ''}`}
-          </h3>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">{category.icon}</span>
+            <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">
+              {isAdditional ? singularTitle : `${singularTitle} ${slotNumber ? `#${slotNumber}` : ''}`}
+            </h3>
+          </div>
+          {onRemove && (
+            <button
+              onClick={handleRemove}
+              className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+              title={getTranslation(language, 'clear')}
+            >
+              <Trash2 className="w-5 h-5" />
+            </button>
+          )}
         </div>
         
         <div className="space-y-4">
@@ -141,7 +199,13 @@ export const RegistrationCard: React.FC<RegistrationCardProps> = ({
           
           <div className="flex gap-2">
             <button
-              onClick={handleSave}
+              onClick={() => {
+                if (registration && !name.trim() && !description.trim()) {
+                  handleRemove();
+                } else {
+                  handleSave();
+                }
+              }}
               disabled={isLoading}
               className={`flex-1 bg-gradient-to-r ${category.color_class} text-white px-4 py-2 rounded-lg font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2`}
             >

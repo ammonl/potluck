@@ -231,31 +231,66 @@ function MainApp() {
   const handleUpdateItem = useCallback(async (categoryId: string, index: number, registration: Registration): Promise<void> => {
     if (!potluck) return;
     
-    const updatedRegistration = {
+    // Get current items for this category
+    const key = getCategoryKey(categoryId);
+    const existingItems = data[key] ? [...(data[key] as (Registration | null)[])] : [];
+    
+    // Ensure array is long enough
+    while (existingItems.length <= index) existingItems.push(null);
+    
+    // Create temp registration with calculated slot number
+    const tempRegistration = {
       ...registration,
       category: categoryId,
-      slot_number: index + 1
+      // slot_number will be calculated below
     };
     
-    const saved = await saveRegistration(updatedRegistration, potluck.id);
+    // Place it in the array at the clicked position to establish relative order
+    existingItems[index] = tempRegistration;
+    
+    // Simulate reorganization: filter out nulls to get "solid" items
+    const solidItems = existingItems.filter(item => item !== null) as Registration[];
+    
+    // Find our item in the solid list to know its new slot number
+    const newIndex = solidItems.indexOf(tempRegistration);
+    const newSlotNumber = newIndex + 1;
+    
+    const finalRegistration = {
+      ...tempRegistration,
+      slot_number: newSlotNumber
+    };
+    
+    const saved = await saveRegistration(finalRegistration, potluck.id);
     if (saved) {
-      const newData = { ...data };
-      const key = getCategoryKey(categoryId);
-      // Expand array if needed
-      if (!newData[key]) {
-        newData[key] = [];
-      }
-      const items = newData[key] as (Registration | null)[];
-      while (items.length <= index) {
-        items.push(null);
-      }
-      items[index] = saved;
-
-      ensureOneEmptySlot(items)
+      // Reconstruct items list with updated slot numbers
+      const newSolidItems = solidItems.map((item, idx) => ({
+        ...item,
+        slot_number: idx + 1
+      }));
       
+      // Replace the one we just saved with the returned object (has ID)
+      // but ensure slot_number is the one we calculated/expect locally
+      newSolidItems[newIndex] = { ...saved, slot_number: newSlotNumber };
+      
+      const newData = { ...data };
+      
+      // Re-pad with nulls based on category default slots
+      const category = categories.find(c => c.id === categoryId);
+      const defaultSlots = category?.slots || 3;
+      
+      const finalItems = [...newSolidItems] as (Registration | null)[];
+      
+      // Ensure we have at least defaultSlots
+      if (finalItems.length < defaultSlots) {
+        while (finalItems.length < defaultSlots) finalItems.push(null);
+      }
+      
+      ensureOneEmptySlot(finalItems);
+      
+      newData[key] = finalItems;
       setData(newData);
     }
-  }, [data, potluck]);
+  }, [data, potluck, categories]);
 
   const handleRemoveItem = useCallback(async (category: Category, index: number) => {
     if (!potluck) return;

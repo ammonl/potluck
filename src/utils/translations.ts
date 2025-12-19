@@ -12,7 +12,7 @@ export const translations = {
     save: "Save",
     saving: "Saving...",
     cancel: "Cancel",
-    clear: "Clear",
+    clear: "Remove",
     clickToSignUp: "Click to sign up!",
     
     // Loading and errors
@@ -33,7 +33,7 @@ export const translations = {
     save: "Gem",
     saving: "Gemmer...",
     cancel: "Annuller",
-    clear: "Ryd",
+    clear: "Fjern",
     clickToSignUp: "Klik for at tilmelde dig!",
     
     // Loading and errors

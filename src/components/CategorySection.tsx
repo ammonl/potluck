@@ -30,17 +30,8 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
     setDescription(language === 'en' ? category.placeholder_en : category.placeholder_da);
   }, [category, language]);
 
-  const getPlaceholder = (index: number) => {
-    const placeholder = language === 'en' ? category.placeholder_en : category.placeholder_da;
-    if (placeholder.trim()) {
-      // If there are multiple placeholders separated by commas, use them in order
-      const placeholders = placeholder.split(',').map(p => p.trim());
-      if (placeholders.length > index) {
-        return placeholders[index];
-      }
-      return placeholders[0]; // Use first placeholder if we run out
-    }
-    return ''; // Use default placeholder
+  const getPlaceholder = () => {
+    return language === 'en' ? category.placeholder_en : category.placeholder_da;
   };
 
   return (
@@ -65,7 +56,7 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
             onRemove={() => onRemoveItem(index)}
             category={category}
             slotNumber={index + 1}
-            placeholder={getPlaceholder(index)}
+            placeholder={getPlaceholder()}
             language={language}
             potluckIcon={potluckIcon}
           />
