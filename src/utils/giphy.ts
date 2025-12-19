@@ -23,3 +23,26 @@ export const fetchGiphyGif = async (query: string): Promise<string | null> => {
     return null;
   }
 };
+
+export const searchGiphyGifs = async (query: string, limit: number = 12): Promise<string[]> => {
+  try {
+    const response = await fetch(
+      `${GIPHY_BASE_URL}?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(query)}&limit=${limit}&offset=0&rating=g&lang=en`
+    );
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch from Giphy');
+    }
+    
+    const data = await response.json();
+    
+    if (data.data && data.data.length > 0) {
+      return data.data.map((item: any) => item.images.fixed_height.url);
+    }
+    
+    return [];
+  } catch (error) {
+    console.error('Error searching Giphy GIFs:', error);
+    return [];
+  }
+};

@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { ArrowLeft, Save, Users, Settings, List, Trash2, Plus, Edit2, X, LogOut, ChevronUp, ChevronDown, Search } from 'lucide-react';
+import { ArrowLeft, Save, Users, Settings, List, Plus, Edit2, LogOut, ChevronUp, ChevronDown, ChevronRight, Search, X } from 'lucide-react';
+
 import { supabase } from '../lib/supabase';
 import { Category, PotluckCategory, Registration } from '../types';
 import { loadCategories, loadAllPotluckCategories, savePotluckCategory, deletePotluckCategory } from '../utils/database';
 import { POPULAR_POTLUCK_ICONS, ALL_POTLUCK_ICONS, getIconComponent } from '../utils/lucideIcons';
+import { AdminRegistrationCard } from './AdminRegistrationCard';
+
+
 
 interface Potluck {
   id: string;
@@ -69,6 +73,24 @@ export const PotluckEditPage: React.FC<PotluckEditPageProps> = ({ onBack }) => {
   // Registrations state
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [registrationsLoading, setRegistrationsLoading] = useState(false);
+  const [sortBy, setSortBy] = useState<'date' | 'category' | 'name' | 'description'>('date');
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
+  const [draggedRegistrationId, setDraggedRegistrationId] = useState<string | null>(null);
+
+
+  const toggleCategoryCollapse = (categoryId: string) => {
+    setCollapsedCategories(prev => {
+        const next = new Set(prev);
+        if (next.has(categoryId)) {
+            next.delete(categoryId);
+        } else {
+            next.add(categoryId);
+        }
+        return next;
+    });
+  };
+
+
 
   // Load potluck data
   useEffect(() => {
@@ -120,7 +142,7 @@ export const PotluckEditPage: React.FC<PotluckEditPageProps> = ({ onBack }) => {
   // Load categories when categories tab is active
   useEffect(() => {
     const loadCategoriesData = async () => {
-      if (activeTab === 'categories' && id) {
+      if ((activeTab === 'categories' || activeTab === 'registrations') && id) {
         setCategoriesLoading(true);
         try {
           const [categories, potluckCats] = await Promise.all([
@@ -315,6 +337,156 @@ export const PotluckEditPage: React.FC<PotluckEditPageProps> = ({ onBack }) => {
       console.error('Error deleting registration:', error);
     }
   };
+
+  const handleUpdateRegistration = async (updatedRegistration: Registration) => {
+    if (!id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('potluck_registrations')
+        .update({
+            name: updatedRegistration.name,
+            description: updatedRegistration.description,
+            gif_url: updatedRegistration.gif_url,
+            // We generally don't update category/slot via this card editor yet, but keeping them same
+        })
+        .eq('id', updatedRegistration.id)
+        .select()
+        .single();
+
+      if (error) {
+         throw error;
+      }
+
+      // Update local state
+      setRegistrations(prev => prev.map(r => r.id === updatedRegistration.id ? data : r));
+
+    } catch (error) {
+      console.error('Error updating registration:', error);
+    }
+  };
+
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, registrationId: string) => {
+    // Only allow dragging if sorted by category
+    if (sortBy !== 'category') return;
+    
+    setDraggedRegistrationId(registrationId);
+    e.dataTransfer.effectAllowed = 'move';
+    // Transparent drag image or default? Default is fine.
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    if (sortBy !== 'category' || !draggedRegistrationId) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>, targetRegistrationId: string, categoryId: string) => {
+    e.preventDefault();
+    
+    if (sortBy !== 'category' || !draggedRegistrationId || draggedRegistrationId === targetRegistrationId) {
+        setDraggedRegistrationId(null);
+        return;
+    }
+
+    const draggedItem = registrations.find(r => r.id === draggedRegistrationId);
+    const targetItem = registrations.find(r => r.id === targetRegistrationId);
+
+    if (!draggedItem || !targetItem) {
+        setDraggedRegistrationId(null);
+        return;
+    }
+
+    // Ensure we are in the same category
+    if (draggedItem.category !== targetItem.category || draggedItem.category !== categoryId) {
+        setDraggedRegistrationId(null);
+        return;
+    }
+
+    // Get all items in this category
+    const categoryRegistrations = registrations
+        .filter(r => r.category === categoryId)
+        .sort((a, b) => (a.slot_number || 0) - (b.slot_number || 0));
+
+    // Find indexes
+    const oldIndex = categoryRegistrations.findIndex(r => r.id === draggedRegistrationId);
+    const newIndex = categoryRegistrations.findIndex(r => r.id === targetRegistrationId);
+
+    if (oldIndex === -1 || newIndex === -1) {
+        setDraggedRegistrationId(null);
+        return;
+    }
+
+    // Reorder
+    const newOrder = [...categoryRegistrations];
+    const [movedItem] = newOrder.splice(oldIndex, 1);
+    newOrder.splice(newIndex, 0, movedItem);
+
+    // Update slot numbers locally
+    // We update slot numbers to be 1-based index
+    const updates = newOrder.map((item, index) => ({
+        ...item,
+        slot_number: index + 1
+    }));
+
+    // Update global registrations state
+    setRegistrations(prev => {
+        const next = [...prev];
+        updates.forEach(updatedItem => {
+            const idx = next.findIndex(r => r.id === updatedItem.id);
+            if (idx !== -1) {
+                next[idx] = updatedItem;
+            }
+        });
+        return next;
+    });
+
+    setDraggedRegistrationId(null);
+
+    // Save to DB
+    try {
+        await Promise.all(updates.map(item => 
+            supabase
+                .from('potluck_registrations')
+                .update({ slot_number: item.slot_number })
+                .eq('id', item.id)
+        ));
+    } catch (error) {
+        console.error('Error updating slot order:', error);
+        // Could revert state here if needed, but keeping simple for now
+    }
+  };
+
+
+  const sortedRegistrations = [...registrations].sort((a, b) => {
+    switch (sortBy) {
+        case 'date':
+            return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+        case 'category':
+            // Sort by category title if possible, else category ID
+            // We need to look up category names from allCategories
+            // Actually 'category' field in registration is category ID.
+            // Let's group by category sort order?
+            // Simple string sort on category ID for now, or better:
+            // Find category in allCategories or potluckCategories to get name/order
+            const catA = allCategories.find(c => c.id === a.category);
+            const catB = allCategories.find(c => c.id === b.category);
+             // Sort by potluck order if available?
+            const pcA = potluckCategories.find(pc => pc.category_id === a.category);
+            const pcB = potluckCategories.find(pc => pc.category_id === b.category);
+             if (pcA && pcB) return pcA.sort_order - pcB.sort_order;
+             if (pcA) return -1;
+             if (pcB) return 1;
+            return (catA?.name || a.category).localeCompare(catB?.name || b.category);
+        case 'name':
+            return a.name.localeCompare(b.name);
+        case 'description':
+            return a.description.localeCompare(b.description);
+        default:
+            return 0;
+    }
+  });
+
 
   if (loading) {
     return (
@@ -905,37 +1077,148 @@ export const PotluckEditPage: React.FC<PotluckEditPageProps> = ({ onBack }) => {
                   <p className="text-gray-600 dark:text-gray-400">No registrations yet</p>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {registrations.map((registration) => (
-                    <div key={registration.id} className="flex items-start justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="px-2 py-1 bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200 text-xs rounded-full">
-                            {registration.category}
-                            {registration.slot_number && ` #${registration.slot_number}`}
-                          </span>
-                        </div>
-                        <h3 className="font-medium text-gray-800 dark:text-gray-100 mb-1">
-                          {registration.name}
-                        </h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                          {registration.description}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-500">
-                          Created: {new Date(registration.created_at!).toLocaleDateString()}
-                        </p>
-                      </div>
-                      
-                      <button
-                        onClick={() => handleDeleteRegistration(registration.id)}
-                        className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900 rounded-lg transition-colors duration-200"
-                        title="Delete registration"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                <div>
+                    <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
+                        <span className="text-sm font-medium text-gray-500 dark:text-gray-400 self-center mr-2">Sort by:</span>
+                        <button
+                            onClick={() => setSortBy('date')}
+                            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                                sortBy === 'date' 
+                                ? 'bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200' 
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                            }`}
+                        >
+                            Date Created
+                        </button>
+                        <button
+                            onClick={() => setSortBy('category')}
+                            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                                sortBy === 'category' 
+                                ? 'bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200' 
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                            }`}
+                        >
+                            Category
+                        </button>
+                        <button
+                            onClick={() => setSortBy('name')}
+                            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                                sortBy === 'name' 
+                                ? 'bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200' 
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                            }`}
+                        >
+                            By (Name)
+                        </button>
+                        <button
+                            onClick={() => setSortBy('description')}
+                            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                                sortBy === 'description' 
+                                ? 'bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200' 
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                            }`}
+                        >
+                            Description
+                        </button>
                     </div>
-                  ))}
+
+                  <div className="space-y-4">
+                    {sortBy === 'category' ? (
+                        // Group by category when sorting by category
+                        (() => {
+                            // Get unique categories from registrations and potluckCategories
+                            const categoryGroups = new Map<string, Registration[]>();
+                            
+                            // Initialize groups based on potluckCategories order
+                            potluckCategories
+                                .filter(pc => pc.is_enabled)
+                                .sort((a, b) => a.sort_order - b.sort_order)
+                                .forEach(pc => {
+                                    categoryGroups.set(pc.category_id, []);
+                                });
+
+                            // Also handle registrations for categories not in potluckCategories (if any)
+                            registrations.forEach(reg => {
+                                if (!categoryGroups.has(reg.category)) {
+                                    categoryGroups.set(reg.category, []);
+                                }
+                                categoryGroups.get(reg.category)?.push(reg);
+                            });
+                            
+                            // Convert map to array and render
+                            return Array.from(categoryGroups.keys()).map(categoryId => {
+                                const categoryRegistrations = categoryGroups.get(categoryId) || [];
+                                const category = allCategories.find(c => c.id === categoryId);
+                                const isCollapsed = collapsedCategories.has(categoryId);
+                                
+                                // Skip empty categories if desired, or show them as empty sections
+                                // Let's show them even if empty to be explicit, or maybe only if they have registrations?
+                                // User request implies grouping the items, so if no items, maybe skip?
+                                // But usually nice to see structure. Let's show only if has items OR if it's an active potluck category?
+                                // Let's show all that have items for now to keep it clean, or follow potluckCategories.
+                                if (categoryRegistrations.length === 0) return null;
+
+                                return (
+                                    <div key={categoryId} className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                                        <button
+                                            onClick={() => toggleCategoryCollapse(categoryId)}
+                                            className="w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                {isCollapsed ? <ChevronRight className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
+                                                <span className="text-lg">{category?.icon}</span>
+                                                <h3 className="font-bold text-gray-700 dark:text-gray-200">
+                                                    {category ? (category.title_en || category.name) : categoryId}
+                                                </h3>
+                                                <span className="text-xs bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded-full">
+                                                    {categoryRegistrations.length}
+                                                </span>
+                                            </div>
+                                        </button>
+                                        
+                                        {!isCollapsed && (
+                                            <div className="p-4 space-y-4 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
+                                                {categoryRegistrations
+                                                    // Ensure they are sorted by slot_number for display in the draggable list
+                                                    // Although they should be coming from map logic/filter sort, let's be sure
+                                                    .sort((a, b) => (a.slot_number || 0) - (b.slot_number || 0))
+                                                    .map(registration => (
+                                                    <AdminRegistrationCard
+                                                        key={registration.id}
+                                                        registration={registration}
+                                                        onUpdate={handleUpdateRegistration}
+                                                        onDelete={() => handleDeleteRegistration(registration.id)}
+                                                        categoryName={category ? (category.title_en || category.name) : registration.category}
+                                                        draggable={sortBy === 'category'}
+                                                        onDragStart={(e) => handleDragStart(e, registration.id)}
+                                                        onDragOver={handleDragOver}
+                                                        onDrop={(e) => handleDrop(e, registration.id, categoryId)}
+                                                    />
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            });
+                        })()
+                    ) : (
+                        sortedRegistrations.map((registration) => {
+                            const category = allCategories.find(c => c.id === registration.category);
+                            return (
+                                <AdminRegistrationCard
+                                    key={registration.id}
+                                    registration={registration}
+                                    onUpdate={handleUpdateRegistration}
+                                    onDelete={() => handleDeleteRegistration(registration.id)}
+                                    categoryName={category ? (category.title_en || category.name) : registration.category}
+                                />
+                            );
+                        })
+                    )}
+                  </div>
+
                 </div>
+
               )}
             </div>
           )}
