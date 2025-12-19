@@ -28,3 +28,6 @@ supabase/.temp
 # Agent directories
 .agent
 .agent/*
+
+# Task tracking
+TODO.md
