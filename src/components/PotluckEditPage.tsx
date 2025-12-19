@@ -210,6 +210,9 @@ export const PotluckEditPage: React.FC<PotluckEditPageProps> = ({ onBack }) => {
 
       // Update local state
       setPotluck(prev => prev ? { ...prev, ...formData } : null);
+      
+      // Return to list
+      onBack();
     } catch (error) {
       console.error('Error saving potluck:', error);
     } finally {
