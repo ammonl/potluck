@@ -45,15 +45,15 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
 
   return (
     <div className="mb-12">
-      <div className="flex items-center gap-3 mb-6">
-        <span className="text-4xl">{category.icon}</span>
-        <div>
+      <div className="mb-6">
+        <div className="flex items-center gap-3">
+          <span className="text-4xl">{category.icon}</span>
           <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100">{title}</h2>
-          {description && (
-            <p className="text-gray-600 dark:text-gray-400 text-lg">{description}</p>
-          )}
+          <div className={`flex-1 h-1 bg-gradient-to-r ${category.color_class} rounded-full ml-4`}></div>
         </div>
-        <div className={`flex-1 h-1 bg-gradient-to-r ${category.color_class} rounded-full ml-4`}></div>
+        {description && (
+          <p className="text-gray-600 dark:text-gray-400 text-lg mt-2">{description}</p>
+        )}
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
