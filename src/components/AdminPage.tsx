@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Users, Calendar, Settings, Edit2, Trash2, Globe, LogOut, Save, X, Search } from 'lucide-react';
+import { ArrowLeft, Plus, Users, Calendar, Settings, Edit2, Trash2, Globe, LogOut } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { loadCategories, saveCategory, updateCategory, deleteCategory } from '../utils/database';
+import { loadCategories, saveCategory, deleteCategory } from '../utils/database';
 import { getCategoryBorderColor } from '../utils/colors';
 import { Category } from '../types';
-import { POPULAR_POTLUCK_ICONS, ALL_POTLUCK_ICONS, getIconComponent } from '../utils/lucideIcons';
+import { getIconComponent } from '../utils/lucideIcons';
+import { IconSelector } from './IconSelector';
+import { UserInfo } from './UserInfo';
+
 
 interface Potluck {
   id: string;
@@ -37,7 +40,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
   const [loading, setLoading] = useState(true);
   const [showNewPotluckForm, setShowNewPotluckForm] = useState(false);
   const [showNewCategoryForm, setShowNewCategoryForm] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<string | null>(null);
+
 
   // New potluck form state
   const [newPotluck, setNewPotluck] = useState({
@@ -70,26 +73,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
   });
 
   // Color class options
-  const colorClassOptions = [
-    { value: 'from-red-400 to-red-600', label: 'Red', preview: 'bg-gradient-to-r from-red-400 to-red-600' },
-    { value: 'from-orange-400 to-orange-600', label: 'Orange', preview: 'bg-gradient-to-r from-orange-400 to-orange-600' },
-    { value: 'from-yellow-400 to-yellow-600', label: 'Yellow', preview: 'bg-gradient-to-r from-yellow-400 to-yellow-600' },
-    { value: 'from-green-400 to-green-600', label: 'Green', preview: 'bg-gradient-to-r from-green-400 to-green-600' },
-    { value: 'from-blue-400 to-blue-600', label: 'Blue', preview: 'bg-gradient-to-r from-blue-400 to-blue-600' },
-    { value: 'from-indigo-400 to-indigo-600', label: 'Indigo', preview: 'bg-gradient-to-r from-indigo-400 to-indigo-600' },
-    { value: 'from-purple-400 to-purple-600', label: 'Purple', preview: 'bg-gradient-to-r from-purple-400 to-purple-600' },
-    { value: 'from-pink-400 to-pink-600', label: 'Pink', preview: 'bg-gradient-to-r from-pink-400 to-pink-600' },
-    { value: 'from-gray-400 to-gray-600', label: 'Gray', preview: 'bg-gradient-to-r from-gray-400 to-gray-600' },
-    { value: 'from-teal-400 to-teal-600', label: 'Teal', preview: 'bg-gradient-to-r from-teal-400 to-teal-600' },
-    { value: 'from-cyan-400 to-cyan-600', label: 'Cyan', preview: 'bg-gradient-to-r from-cyan-400 to-cyan-600' },
-    { value: 'from-emerald-400 to-emerald-600', label: 'Emerald', preview: 'bg-gradient-to-r from-emerald-400 to-emerald-600' },
-    { value: 'from-lime-400 to-lime-600', label: 'Lime', preview: 'bg-gradient-to-r from-lime-400 to-lime-600' },
-    { value: 'from-amber-400 to-amber-600', label: 'Amber', preview: 'bg-gradient-to-r from-amber-400 to-amber-600' },
-    { value: 'from-rose-400 to-rose-600', label: 'Rose', preview: 'bg-gradient-to-r from-rose-400 to-rose-600' },
-    { value: 'from-violet-400 to-violet-600', label: 'Violet', preview: 'bg-gradient-to-r from-violet-400 to-violet-600' },
-    { value: 'from-fuchsia-400 to-fuchsia-600', label: 'Fuchsia', preview: 'bg-gradient-to-r from-fuchsia-400 to-fuchsia-600' },
-    { value: 'from-sky-400 to-sky-600', label: 'Sky', preview: 'bg-gradient-to-r from-sky-400 to-sky-600' }
-  ];
+  // Color class options moved to utils/colors.ts
 
   // Load potlucks
   useEffect(() => {
@@ -186,17 +170,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
     }
   };
 
-  const handleUpdateCategory = async (id: string, updates: Partial<Category>) => {
-    try {
-      const updatedCategory = await updateCategory(id, updates);
-      if (updatedCategory) {
-        setCategories(prev => prev.map(cat => cat.id === id ? updatedCategory : cat));
-        setEditingCategory(null);
-      }
-    } catch (error) {
-      console.error('Error updating category:', error);
-    }
-  };
+
 
   const handleDeleteCategory = async (id: string) => {
     if (!confirm('Are you sure you want to delete this category? This will also remove it from all potlucks.')) {
@@ -599,12 +573,8 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
                   <CategoryCard
                     key={category.id}
                     category={category}
-                    isEditing={editingCategory === category.id}
-                    onEdit={() => setEditingCategory(category.id)}
-                    onSave={(updates) => handleUpdateCategory(category.id, updates)}
-                    onCancel={() => setEditingCategory(null)}
+                    onEdit={() => navigate(`/admin/category/${category.id}`)}
                     onDelete={() => handleDeleteCategory(category.id)}
-                    colorClassOptions={colorClassOptions}
                   />
                 ))}
               </div>
@@ -630,327 +600,22 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
   );
 };
 
-interface IconSelectorProps {
-  selectedIcon: string;
-  onIconSelect: (icon: string) => void;
-}
 
-const IconSelector: React.FC<IconSelectorProps> = ({ selectedIcon, onIconSelect }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showAll, setShowAll] = useState(false);
-
-  const filteredIcons = (showAll ? ALL_POTLUCK_ICONS : POPULAR_POTLUCK_ICONS)
-    .filter(iconName => 
-      iconName.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-  const SelectedIconComponent = getIconComponent(selectedIcon);
-
-  return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-      >
-        <div className="flex items-center gap-2">
-          <SelectedIconComponent className="w-5 h-5" />
-          <span>{selectedIcon}</span>
-        </div>
-        <div className="text-gray-400">▼</div>
-      </button>
-
-      {isOpen && (
-        <div className="absolute z-50 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-80 overflow-hidden">
-          <div className="p-3 border-b border-gray-200 dark:border-gray-600">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search icons..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-              />
-            </div>
-            <div className="flex gap-2 mt-2">
-              <button
-                type="button"
-                onClick={() => setShowAll(false)}
-                className={`px-3 py-1 text-xs rounded-full transition-colors ${
-                  !showAll 
-                    ? 'bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200' 
-                    : 'bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-500'
-                }`}
-              >
-                Popular
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowAll(true)}
-                className={`px-3 py-1 text-xs rounded-full transition-colors ${
-                  showAll 
-                    ? 'bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200' 
-                    : 'bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-500'
-                }`}
-              >
-                All Icons
-              </button>
-            </div>
-          </div>
-          <div className="grid grid-cols-6 gap-1 p-2 max-h-60 overflow-y-auto">
-            {filteredIcons.map((iconName) => {
-              const IconComponent = getIconComponent(iconName);
-              return (
-                <button
-                  key={iconName}
-                  type="button"
-                  onClick={() => {
-                    onIconSelect(iconName);
-                    setIsOpen(false);
-                  }}
-                  className={`p-3 rounded-lg transition-all duration-200 flex flex-col items-center gap-1 ${
-                    selectedIcon === iconName
-                      ? 'bg-orange-100 dark:bg-orange-900 text-orange-600 dark:text-orange-300 ring-2 ring-orange-500'
-                      : 'hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-400'
-                  }`}
-                  title={iconName}
-                >
-                  <IconComponent className="w-5 h-5" />
-                  <span className="text-xs truncate w-full text-center">{iconName}</span>
-                </button>
-              );
-            })}
-          </div>
-          {filteredIcons.length === 0 && (
-            <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-              No icons found matching "{searchTerm}"
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
 
 interface CategoryCardProps {
   category: Category;
-  isEditing: boolean;
   onEdit: () => void;
-  onSave: (updates: Partial<Category>) => void;
-  onCancel: () => void;
   onDelete: () => void;
-  colorClassOptions: { value: string; label: string; preview: string }[];
 }
 
 const CategoryCard: React.FC<CategoryCardProps> = ({
   category,
-  isEditing,
   onEdit,
-  onSave,
-  onCancel,
-  onDelete,
-  colorClassOptions
+  onDelete
 }) => {
-  const [formData, setFormData] = useState({
-    name: category.name,
-    title_en: category.title_en,
-    title_da: category.title_da,
-    singular_en: category.singular_en,
-    singular_da: category.singular_da,
-    placeholder_en: category.placeholder_en || '',
-    placeholder_da: category.placeholder_da || '',
-    icon: category.icon,
-    color_class: category.color_class,
-    slots: category.slots
-  });
-
-  const handleSave = () => {
-    onSave(formData);
-  };
-
-  const handleCancel = () => {
-    setFormData({
-      name: category.name,
-      title_en: category.title_en,
-      title_da: category.title_da,
-      singular_en: category.singular_en,
-      singular_da: category.singular_da,
-      placeholder_en: category.placeholder_en || '',
-      placeholder_da: category.placeholder_da || '',
-      icon: category.icon,
-      color_class: category.color_class,
-      slots: category.slots
-    });
-    onCancel();
-  };
-
-  // Use formData.color_class when editing, category.color_class when not editing
-  const currentColorClass = isEditing ? formData.color_class : category.color_class;
-  if (isEditing) {
-    return (
-      <div className="bg-white dark:bg-gray-700 rounded-lg p-6 border-2 shadow-lg" style={{
-        borderColor: getCategoryBorderColor(currentColorClass)
-      }}>
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Icon
-              </label>
-              <input
-                type="text"
-                value={formData.icon}
-                onChange={(e) => setFormData(prev => ({ ...prev, icon: e.target.value }))}
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Name
-              </label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Title (English)
-              </label>
-              <input
-                type="text"
-                value={formData.title_en}
-                onChange={(e) => setFormData(prev => ({ ...prev, title_en: e.target.value }))}
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Title (Danish)
-              </label>
-              <input
-                type="text"
-                value={formData.title_da}
-                onChange={(e) => setFormData(prev => ({ ...prev, title_da: e.target.value }))}
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Singular (English)
-              </label>
-              <input
-                type="text"
-                value={formData.singular_en}
-                onChange={(e) => setFormData(prev => ({ ...prev, singular_en: e.target.value }))}
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Singular (Danish)
-              </label>
-              <input
-                type="text"
-                value={formData.singular_da}
-                onChange={(e) => setFormData(prev => ({ ...prev, singular_da: e.target.value }))}
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Description (English)
-              </label>
-              <input
-                type="text"
-                value={formData.placeholder_en}
-                onChange={(e) => setFormData(prev => ({ ...prev, placeholder_en: e.target.value }))}
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                placeholder="Optional description"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Description (Danish)
-              </label>
-              <input
-                type="text"
-                value={formData.placeholder_da}
-                onChange={(e) => setFormData(prev => ({ ...prev, placeholder_da: e.target.value }))}
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                placeholder="Valgfri beskrivelse"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Color
-              </label>
-              <select
-                value={formData.color_class}
-                onChange={(e) => setFormData(prev => ({ ...prev, color_class: e.target.value }))}
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-              >
-                {colorClassOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Default Slots
-              </label>
-              <input
-                type="number"
-                value={formData.slots}
-                onChange={(e) => setFormData(prev => ({ ...prev, slots: parseInt(e.target.value) || 0 }))}
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-              />
-            </div>
-          </div>
-          <div className={`mt-2 h-4 rounded bg-gradient-to-r ${currentColorClass}`}></div>
-
-          <div className="flex gap-2 pt-2">
-            <button
-              onClick={handleSave}
-              className="flex items-center gap-1 px-3 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors duration-200"
-            >
-              <Save className="w-3 h-3" />
-              Save
-            </button>
-            <button
-              onClick={handleCancel}
-              className="flex items-center gap-1 px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
-            >
-              <X className="w-3 h-3" />
-              Cancel
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6 border-2 relative" style={{
-      borderColor: getCategoryBorderColor(currentColorClass)
+    <div className="bg-white dark:bg-gray-700 rounded-lg p-6 border-2 relative" style={{
+      borderColor: getCategoryBorderColor(category.color_class)
     }}>
       <div className="absolute top-4 right-4 flex gap-2">
         <button
@@ -982,36 +647,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
           </div>
         </div>
       </div>
-      <div className={`absolute bottom-0 left-0 right-0 h-3 bg-gradient-to-r ${currentColorClass} rounded-b-lg`}></div>
-    </div>
-  );
-};
-
-// Separate component for user info to avoid hooks issues
-const UserInfo: React.FC = () => {
-  const [user, setUser] = useState<any>(null);
-  
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user);
-    });
-  }, []);
-
-  return (
-    <div className="flex items-center gap-2 px-3">
-      <img
-        src={user?.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.user_metadata?.full_name || 'Admin')}&background=ea580c&color=fff`}
-        alt="Profile"
-        className="w-8 h-8 rounded-full"
-      />
-      <div className="text-sm">
-        <p className="font-medium text-white">
-          {user?.user_metadata?.full_name || 'Admin'}
-        </p>
-        <p className="text-white text-opacity-80 text-xs">
-          {user?.email || 'Authenticated'}
-        </p>
-      </div>
+      <div className={`absolute bottom-0 left-0 right-0 h-3 bg-gradient-to-r ${category.color_class} rounded-b-lg`}></div>
     </div>
   );
 };

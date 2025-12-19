@@ -13,6 +13,7 @@ import { AdminPage } from './components/AdminPage';
 import { PrivacyPage } from './components/PrivacyPage';
 import { TermsPage } from './components/TermsPage';
 import { PotluckEditPage } from './components/PotluckEditPage';
+import { CategoryEditPage } from './components/CategoryEditPage';
 
 interface Potluck {
   id: string;
@@ -59,6 +60,7 @@ function App() {
       <Route path="/:slug" element={<AuthGuard><MainApp /></AuthGuard>} />
       <Route path="/admin" element={<AuthGuard requireAuth><AdminPageWithTitle onBack={() => window.location.href = '/'} /></AuthGuard>} />
       <Route path="/admin/potluck/:id" element={<AuthGuard requireAuth><PotluckEditPageWithTitle onBack={() => navigate('/admin')} /></AuthGuard>} />
+      <Route path="/admin/category/:id" element={<AuthGuard requireAuth><CategoryEditPageWithTitle onBack={() => navigate('/admin')} /></AuthGuard>} />
       <Route path="/privacy" element={<AuthGuard><PrivacyPageWithTitle onBack={() => window.location.href = '/'} /></AuthGuard>} />
       <Route path="/terms" element={<AuthGuard><TermsPageWithTitle onBack={() => window.location.href = '/'} /></AuthGuard>} />
     </Routes>
@@ -78,6 +80,13 @@ function PotluckEditPageWithTitle(props: any) {
     document.title = 'Potluck Organizer - Edit Potluck';
   }, []);
   return <PotluckEditPage {...props} />;
+}
+
+function CategoryEditPageWithTitle(props: any) {
+  useEffect(() => {
+    document.title = 'Potluck Organizer - Edit Category';
+  }, []);
+  return <CategoryEditPage {...props} />;
 }
 
 function PrivacyPageWithTitle(props: any) {
