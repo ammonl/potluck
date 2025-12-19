@@ -38,7 +38,9 @@ export const RegistrationCard: React.FC<RegistrationCardProps> = ({
 
   // Update singular title when language or category changes
   useEffect(() => {
-    setSingularTitle(language === 'en' ? category.singular_en : category.singular_da);
+    const title = language === 'en' ? category.singular_en : category.singular_da;
+    const fallback = language === 'en' ? 'Dish' : 'Ret';
+    setSingularTitle(title || fallback);
   }, [category, language]);
 
   // Update local state when registration prop changes
@@ -159,7 +161,7 @@ export const RegistrationCard: React.FC<RegistrationCardProps> = ({
               {isAdditional ? singularTitle : `${singularTitle} ${slotNumber ? `#${slotNumber}` : ''}`}
             </h3>
           </div>
-          {onRemove && (
+          {onRemove && registration && (
             <button
               onClick={handleRemove}
               className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
@@ -287,11 +289,7 @@ export const RegistrationCard: React.FC<RegistrationCardProps> = ({
         </div>
       </div>
       
-      <div className="mb-4 flex-grow overflow-hidden">
-        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-          {isAdditional ? singularTitle : `${singularTitle} ${slotNumber ? `#${slotNumber}` : ''}`}
-        </p>
-      </div>
+
       
       <div className="mt-auto">
         {registration.gif_url && (
