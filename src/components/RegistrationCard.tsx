@@ -253,7 +253,7 @@ export const RegistrationCard: React.FC<RegistrationCardProps> = ({
       borderColor: getCategoryBorderColor(category.color_class)
     }}>
       <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-start gap-2">
           <span className="text-2xl">{category.icon}</span>
           <div>
             <h3 
