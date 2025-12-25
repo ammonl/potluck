@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { ArrowLeft, Save, Users, Settings, List, Plus, Edit2, LogOut, ChevronUp, ChevronDown, ChevronRight, Search, X } from 'lucide-react';
+import { ArrowLeft, Save, Users, Settings, List, Edit2, LogOut, ChevronRight, Search, X, ChevronDown, GripVertical, Plus } from 'lucide-react';
 
 import { supabase } from '../lib/supabase';
 import { Category, DefaultCategory, Registration } from '../types';
-import { loadCategories, loadAllPotluckCategories, savePotluckCategory } from '../utils/database';
+import { loadCategories, loadAllPotluckCategories, savePotluckCategory, deleteRegistration } from '../utils/database';
 import { POPULAR_POTLUCK_ICONS, ALL_POTLUCK_ICONS, getIconComponent } from '../utils/lucideIcons';
 import { AdminRegistrationCard } from './AdminRegistrationCard';
 
@@ -76,6 +76,20 @@ export const PotluckEditPage: React.FC<PotluckEditPageProps> = ({ onBack }) => {
   const [sortBy, setSortBy] = useState<'date' | 'category' | 'name' | 'description'>('date');
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
   const [draggedRegistrationId, setDraggedRegistrationId] = useState<string | null>(null);
+  const [draggedCategoryId, setDraggedCategoryId] = useState<string | null>(null);
+  const dragOriginalCategories = useRef<Category[]>([]);
+  const isDropped = useRef(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [draggableId, setDraggableId] = useState<string | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addMode, setAddMode] = useState<'presets' | 'custom'>('presets');
+  const [newCategoryData, setNewCategoryData] = useState({
+    name: '',
+    title_en: '',
+    title_da: '',
+    slots: 3,
+    icon: '🍽️'
+  });
 
 
   const toggleCategoryCollapse = (categoryId: string) => {
@@ -220,11 +234,10 @@ export const PotluckEditPage: React.FC<PotluckEditPageProps> = ({ onBack }) => {
     }
   };
 
-  const handleToggleCategory = async (defaultCategoryId: string, isEnabled: boolean) => {
+  const handleAddCategory = async (defaultCategoryId: string) => {
     if (!id) return;
 
     try {
-      if (isEnabled) {
         // Check if it already exists (enabled or disabled)
         const existing = potluckCategories.find(pc => pc.source_default_category_id === defaultCategoryId);
         
@@ -258,104 +271,53 @@ export const PotluckEditPage: React.FC<PotluckEditPageProps> = ({ onBack }) => {
             source_default_category_id: defaultCat.id
           });
         }
-      } else {
-        // Disable category
-        // Find the category by its own ID (passed as defaultCategoryId in the "Remove" button case? 
-        // No, the UI usually passes the ID of the item being iterated.
-        // If enabling, we pass default ID.
-        // If disabling, we might pass PotluckCategory ID or Default ID.
-        // Let's assume enabling passes DefaultID.
-        // Rendering logic for "Enabled" passes PotluckCategory ID.
-        // SO this function needs to handle both? Or we split it?
-        // Let's check call sites.
-        // "Available" list calls handleToggleCategory(defaultCategory.id, true)
-        // "Enabled" list calls handleToggleCategory(potluckCategory.source_default_category_id, false) ??
-        // Let's make it consistent. We will pass DefaultCategoryID.
-        
+
+        // Reload categories
+        const potluckCats = await loadAllPotluckCategories(id);
+        setPotluckCategories(potluckCats);
+      } catch (error) {
+        console.error('Error toggling category:', error);
+      }
+    };
+
+
+  const handleDeleteCategory = async (defaultCategoryId: string) => {
+    if (!id) return;
+
+    try {
         const existing = potluckCategories.find(pc => pc.id === defaultCategoryId || pc.source_default_category_id === defaultCategoryId);
         if (existing) {
+             // Check for registrations
+             const count = registrations.filter(r => r.category === existing.id).length;
+             
+             if (count > 0) {
+                 const confirmed = window.confirm(
+                     `This category has ${count} existing registration${count > 1 ? 's' : ''}. ` +
+                     `If you remove this category, those registrations will be deleted.\n\n` +
+                     `Are you sure you want to proceed?`
+                 );
+                 if (!confirmed) return;
+                 
+                 // Delete registrations
+                 const regsToDelete = registrations.filter(r => r.category === existing.id);
+                 await Promise.all(regsToDelete.map(r => deleteRegistration(r.id)));
+                 setRegistrations(prev => prev.filter(r => r.category !== existing.id));
+             }
+
           await savePotluckCategory({
             id: existing.id,
             is_enabled: false
           });
         }
+
+        // Reload categories
+        const potluckCats = await loadAllPotluckCategories(id);
+        setPotluckCategories(potluckCats);
+      } catch (error) {
+        console.error('Error toggling category:', error);
       }
+    };
 
-      // Reload categories
-      const potluckCats = await loadAllPotluckCategories(id);
-      setPotluckCategories(potluckCats);
-    } catch (error) {
-      console.error('Error toggling category:', error);
-    }
-  };
-
-  const handleMoveCategoryUp = async (potluckCategoryId: string) => {
-    if (!id) return;
-
-    const enabledCategories = potluckCategories
-      .filter(pc => pc.is_enabled)
-      .sort((a, b) => a.sort_order - b.sort_order);
-    
-    const currentIndex = enabledCategories.findIndex(pc => pc.id === potluckCategoryId);
-    if (currentIndex <= 0) return; // Already at top or not found
-
-    // Swap sort orders
-    const current = enabledCategories[currentIndex];
-    const previous = enabledCategories[currentIndex - 1];
-    
-    try {
-      await Promise.all([
-        savePotluckCategory({
-          id: current.id,
-          sort_order: previous.sort_order
-        }),
-        savePotluckCategory({
-          id: previous.id,
-          sort_order: current.sort_order
-        })
-      ]);
-
-      // Reload categories
-      const potluckCats = await loadAllPotluckCategories(id);
-      setPotluckCategories(potluckCats);
-    } catch (error) {
-      console.error('Error moving category up:', error);
-    }
-  };
-
-  const handleMoveCategoryDown = async (potluckCategoryId: string) => {
-    if (!id) return;
-
-    const enabledCategories = potluckCategories
-      .filter(pc => pc.is_enabled)
-      .sort((a, b) => a.sort_order - b.sort_order);
-    
-    const currentIndex = enabledCategories.findIndex(pc => pc.id === potluckCategoryId);
-    if (currentIndex < 0 || currentIndex >= enabledCategories.length - 1) return; // Already at bottom or not found
-
-    // Swap sort orders
-    const current = enabledCategories[currentIndex];
-    const next = enabledCategories[currentIndex + 1];
-    
-    try {
-      await Promise.all([
-        savePotluckCategory({
-          id: current.id,
-          sort_order: next.sort_order
-        }),
-        savePotluckCategory({
-          id: next.id,
-          sort_order: current.sort_order
-        })
-      ]);
-
-      // Reload categories
-      const potluckCats = await loadAllPotluckCategories(id);
-      setPotluckCategories(potluckCats);
-    } catch (error) {
-      console.error('Error moving category down:', error);
-    }
-  };
 
   const handleDeleteRegistration = async (registrationId: string) => {
     try {
@@ -495,6 +457,142 @@ export const PotluckEditPage: React.FC<PotluckEditPageProps> = ({ onBack }) => {
     }
   };
 
+  const handleCategoryDragStart = (e: React.DragEvent<HTMLDivElement>, categoryId: string) => {
+    dragOriginalCategories.current = JSON.parse(JSON.stringify(potluckCategories)); // Deep copy just in case, or shallow is fine if immutable items
+    isDropped.current = false;
+    
+    setDraggedCategoryId(categoryId);
+    e.dataTransfer.effectAllowed = 'move';
+    // Remove the default drag image or styling if we want pure list reordering visual
+    // But native requires an element. We let it be.
+  };
+
+  const handleCategoryDragOver = (e: React.DragEvent<HTMLDivElement>, targetCategoryId: string) => {
+    e.preventDefault();
+    if (!draggedCategoryId || draggedCategoryId === targetCategoryId) return;
+
+    // Throttle via logic: only update if index changes
+    const enabledCategories = potluckCategories
+      .filter(pc => pc.is_enabled)
+      .sort((a, b) => a.sort_order - b.sort_order);
+
+    const oldIndex = enabledCategories.findIndex(pc => pc.id === draggedCategoryId);
+    const newIndex = enabledCategories.findIndex(pc => pc.id === targetCategoryId);
+
+    if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) {
+        return;
+    }
+    
+    // Reorder locally to show "move"
+    const newOrder = [...enabledCategories];
+    const [movedItem] = newOrder.splice(oldIndex, 1);
+    newOrder.splice(newIndex, 0, movedItem);
+
+    const updates = newOrder.map((item, index) => ({
+      ...item,
+      sort_order: index
+    }));
+
+    // Optimistic update
+    setPotluckCategories(prev => {
+        const next = [...prev];
+        updates.forEach(update => {
+            const idx = next.findIndex(pc => pc.id === update.id);
+            if (idx !== -1) next[idx] = update;
+        });
+        return next;
+    });
+  };
+
+  const handleCategoryDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    isDropped.current = true;
+    setDraggedCategoryId(null);
+
+    // Save current state to DB
+    const enabledCategories = potluckCategories
+      .filter(pc => pc.is_enabled)
+      .sort((a, b) => a.sort_order - b.sort_order);
+    
+    const updates = enabledCategories.map((item, index) => ({
+         ...item,
+         sort_order: index
+    }));
+
+    // Update DB
+    try {
+        await Promise.all(updates.map(item => 
+             savePotluckCategory(item)
+        ));
+    } catch (error) {
+        console.error('Error reordering categories:', error);
+    }
+  };
+
+  const handleCategoryDragEnd = () => {
+      if (!isDropped.current) {
+          // Revert
+          setPotluckCategories(dragOriginalCategories.current);
+          setDraggedCategoryId(null);
+      }
+  };
+
+  const handleSaveCategoryChanges = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCategory) return;
+
+    try {
+      const updated = await savePotluckCategory(editingCategory);
+      if (updated) {
+        setPotluckCategories(prev => prev.map(c => c.id === updated.id ? updated : c));
+        setEditingCategory(null);
+      }
+    } catch (error) {
+      console.error('Error updating category:', error);
+    }
+  };
+
+  const handleAddCustomCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!id) return;
+
+    try {
+      // Auto-generate name/slug if not provided or just sanitize title
+      let name = newCategoryData.name.toLowerCase().replace(/[^a-z0-9-_]/g, '-');
+      if (!name) {
+         name = newCategoryData.title_en.toLowerCase().replace(/[^a-z0-9-_]/g, '-');
+      }
+      if (!name) name = `custom-${Date.now()}`;
+
+      const maxSortOrder = Math.max(...potluckCategories.map(pc => pc.sort_order), -1);
+
+      const newCategory = await savePotluckCategory({
+        potluck_id: id,
+        name: name,
+        title_en: newCategoryData.title_en,
+        title_da: newCategoryData.title_da || newCategoryData.title_en,
+        icon: newCategoryData.icon,
+        slots: newCategoryData.slots,
+        sort_order: maxSortOrder + 1,
+        is_enabled: true
+      });
+
+      if (newCategory) {
+          setPotluckCategories(prev => [...prev, newCategory]);
+          setShowAddModal(false);
+          setNewCategoryData({
+            name: '',
+            title_en: '',
+            title_da: '',
+            slots: 3,
+            icon: '🍽️'
+          });
+      }
+    } catch (error) {
+        console.error('Error adding custom category:', error);
+    }
+  };
+
 
   const sortedRegistrations = [...registrations].sort((a, b) => {
     switch (sortBy) {
@@ -624,7 +722,26 @@ export const PotluckEditPage: React.FC<PotluckEditPageProps> = ({ onBack }) => {
         <div className="bg-white dark:bg-gray-700 rounded-b-lg rounded-tr-lg border border-gray-200 dark:border-gray-600 shadow-lg p-6">
           {activeTab === 'metadata' && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6">Potluck Details</h2>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Potluck Details</h2>
+                <div className="flex gap-3">
+                  <button
+                    onClick={onBack}
+                    disabled={saving}
+                    className="flex items-center gap-2 px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveMetadata}
+                    disabled={saving}
+                    className="flex items-center gap-2 px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                  >
+                    <Save className="w-4 h-4" />
+                    {saving ? 'Saving...' : 'Save Changes'}
+                  </button>
+                </div>
+              </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -975,29 +1092,21 @@ export const PotluckEditPage: React.FC<PotluckEditPageProps> = ({ onBack }) => {
                 </label>
               </div>
 
-              <div className="flex justify-end">
-                  <button
-                    onClick={onBack}
-                    disabled={saving}
-                    className="flex items-center gap-2 px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 mr-3"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleSaveMetadata}
-                    disabled={saving}
-                    className="flex items-center gap-2 px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-                  >
-                    <Save className="w-4 h-4" />
-                    {saving ? 'Saving...' : 'Save Changes'}
-                  </button>
-              </div>
+
             </div>
           )}
 
           {activeTab === 'categories' && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6">Manage Categories</h2>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Manage Categories</h2>
+                <button
+                  onClick={onBack}
+                  className="flex items-center gap-2 px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors duration-200"
+                >
+                  Close
+                </button>
+              </div>
               
               {categoriesLoading ? (
                 <div className="text-center py-8">
@@ -1005,85 +1114,66 @@ export const PotluckEditPage: React.FC<PotluckEditPageProps> = ({ onBack }) => {
                   <p className="text-gray-600 dark:text-gray-400">Loading categories...</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {/* Default Categories */}
+                <div className="max-w-3xl">
+                  {/* Potluck Categories */}
                   <div>
-                    <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">Default Categories</h3>
-                    <div className="space-y-3">
-                      {allCategories
-                        .filter(category => !potluckCategories.some(pc => pc.source_default_category_id === category.id && pc.is_enabled))
-                        .map((category) => (
-                          <div key={category.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
-                            <div className="flex items-center gap-3">
-                              <span className="text-xl">{category.icon}</span>
-                              <div>
-                                <h4 className="font-medium text-gray-800 dark:text-gray-100">
-                                  {category.title_en} / {category.title_da}
-                                </h4>
-                                <p className="text-xs text-gray-600 dark:text-gray-400">
-                                  {category.name}
-                                </p>
-                              </div>
-                            </div>
-                            
-                            <button
-                              onClick={() => handleToggleCategory(category.id, true)}
-                              className="flex items-center gap-1 px-3 py-1 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors duration-200"
-                            >
-                              <Plus className="w-3 h-3" />
-                              Add
-                            </button>
-                          </div>
-                        ))}
-                      {allCategories.filter(category => !potluckCategories.some(pc => pc.source_default_category_id === category.id && pc.is_enabled)).length === 0 && (
-                        <div className="text-center py-6 text-gray-500 dark:text-gray-400">
-                          All categories have been added to this potluck
-                        </div>
-                      )}
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">Potluck Categories (in display order)</h3>
+                        <button
+                            onClick={() => setShowAddModal(true)}
+                            className="flex items-center gap-2 px-3 py-1.5 bg-orange-100 text-orange-700 hover:bg-orange-200 dark:bg-orange-900 dark:text-orange-200 dark:hover:bg-orange-800 rounded-lg text-sm font-medium transition-colors"
+                        >
+                            <Plus className="w-4 h-4" />
+                            Add Category
+                        </button>
                     </div>
-                  </div>
-
-                  {/* Enabled Categories */}
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">Potluck Categories (in display order)</h3>
                     <div className="space-y-3">
                       {potluckCategories
                         .filter(pc => pc.is_enabled)
                         .sort((a, b) => a.sort_order - b.sort_order)
-                        .map((category, index, enabledCategories) => {
+                        .map((category) => {
                           return (
-                            <div key={category.id} className="flex items-center justify-between p-3 bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 shadow-sm">
-                              <div className="flex items-top gap-3">
-                                <span className="text-xl">{category.icon}</span>
-                                <div>
-                                  <h4 className="font-medium text-gray-800 dark:text-gray-100">
-                                    {category.title_en} / {category.title_da}
-                                  </h4>
-                                  <p className="text-xs text-gray-600 dark:text-gray-400">
-                                    {category.name}
-                                  </p>
+                            <div 
+                              key={category.id} 
+                              draggable={draggableId === category.id}
+                              onDragStart={(e) => handleCategoryDragStart(e, category.id)}
+                              onDragOver={(e) => handleCategoryDragOver(e, category.id)}
+                              onDrop={handleCategoryDrop}
+                              onDragEnd={handleCategoryDragEnd}
+                              onClick={() => setEditingCategory(category)}
+                              className={`flex items-center justify-between p-3 bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 shadow-sm transition-all duration-200 ${
+                                draggedCategoryId === category.id ? 'opacity-50 ring-2 ring-orange-500' : 'hover:shadow-md cursor-pointer'
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div 
+                                  className="drag-handle p-1 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing"
+                                  onClick={(e) => e.stopPropagation()}
+                                  onMouseEnter={() => setDraggableId(category.id)}
+                                  onMouseLeave={() => setDraggableId(null)}
+                                >
+                                    <GripVertical className="w-5 h-5" />
+                                </div>
+                                <div className="flex items-top gap-3">
+                                  <span className="text-xl">{category.icon}</span>
+                                  <div>
+                                    <h4 className="font-medium text-gray-800 dark:text-gray-100">
+                                      {category.title_en} / {category.title_da}
+                                    </h4>
+                                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                                      {category.name} ({category.slots} slots)
+                                    </p>
+                                  </div>
                                 </div>
                               </div>
                               
                               <div className="flex items-center gap-1">
+
                                 <button
-                                  onClick={() => handleMoveCategoryUp(category.id)}
-                                  disabled={index === 0}
-                                  className="p-1 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                                  title="Move up"
-                                >
-                                  <ChevronUp className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={() => handleMoveCategoryDown(category.id)}
-                                  disabled={index === enabledCategories.length - 1}
-                                  className="p-1 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                                  title="Move down"
-                                >
-                                  <ChevronDown className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={() => handleToggleCategory(category.id, false)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteCategory(category.id, false);
+                                  }}
                                   className="p-1 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900 rounded transition-all duration-200"
                                   title="Remove from potluck"
                                 >
@@ -1105,9 +1195,265 @@ export const PotluckEditPage: React.FC<PotluckEditPageProps> = ({ onBack }) => {
             </div>
           )}
 
+          {/* Edit Category Modal */}
+          {editingCategory && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+                <div className="p-6">
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xl font-bold text-gray-800 dark:text-white">Edit Category</h3>
+                    <button 
+                      onClick={() => setEditingCategory(null)}
+                      className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    >
+                      <X className="w-6 h-6" />
+                    </button>
+                  </div>
+                  
+                  <form onSubmit={handleSaveCategoryChanges} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Title (English)
+                      </label>
+                      <input
+                        type="text"
+                        value={editingCategory.title_en}
+                        onChange={e => setEditingCategory({...editingCategory, title_en: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Title (Danish)
+                      </label>
+                      <input
+                        type="text"
+                        value={editingCategory.title_da}
+                        onChange={e => setEditingCategory({...editingCategory, title_da: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Icon (Emoji)
+                      </label>
+                      <input
+                        type="text"
+                        value={editingCategory.icon}
+                        onChange={e => setEditingCategory({...editingCategory, icon: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Default Slots
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={editingCategory.slots}
+                        onChange={e => setEditingCategory({...editingCategory, slots: parseInt(e.target.value) || 0})}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+
+                    <div className="pt-4 flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setEditingCategory(null)}
+                        className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                      >
+                        Save Changes
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Add Category Modal */}
+          {showAddModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+                <div className="p-6">
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xl font-bold text-gray-800 dark:text-white">Add Category</h3>
+                    <button 
+                      onClick={() => setShowAddModal(false)}
+                      className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    >
+                      <X className="w-6 h-6" />
+                    </button>
+                  </div>
+
+                  <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-gray-700">
+                      <button 
+                        onClick={() => setAddMode('presets')}
+                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                            addMode === 'presets' 
+                            ? 'border-orange-500 text-orange-600 dark:text-orange-400' 
+                            : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
+                        }`}
+                      >
+                        Presets
+                      </button>
+                      <button 
+                         onClick={() => setAddMode('custom')}
+                         className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                            addMode === 'custom' 
+                            ? 'border-orange-500 text-orange-600 dark:text-orange-400' 
+                            : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
+                        }`}
+                      >
+                        Custom
+                      </button>
+                  </div>
+                  
+                  {addMode === 'presets' ? (
+                      <div className="space-y-3">
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Select from default categories:</p>
+                          <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                              {allCategories
+                                .filter(dc => !potluckCategories.some(pc => pc.source_default_category_id === dc.id && pc.is_enabled))
+                                .sort((a, b) => a.title_en.localeCompare(b.title_en))
+                                .map(category => (
+                                  <div key={category.id} className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
+                                      <div className="flex items-center gap-3">
+                                          <span className="text-2xl">{category.icon}</span>
+                                          <div>
+                                              <p className="font-medium text-gray-800 dark:text-gray-200">{category.title_en}</p>
+                                              <p className="text-xs text-gray-500">{category.slots} slots</p>
+                                          </div>
+                                      </div>
+                                      <button 
+                                        onClick={() => {
+                                            handleAddCategory(category.id);
+                                            setShowAddModal(false);
+                                        }}
+                                        className="p-1.5 bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 rounded hover:bg-green-200 dark:hover:bg-green-800 transition-colors"
+                                      >
+                                          <Plus className="w-4 h-4" />
+                                      </button>
+                                  </div>
+                                ))}
+                                {allCategories.filter(dc => !potluckCategories.some(pc => pc.source_default_category_id === dc.id && pc.is_enabled)).length === 0 && (
+                                    <p className="text-center text-gray-500 py-4">All presets added!</p>
+                                )}
+                          </div>
+                      </div>
+                  ) : (
+                      <form onSubmit={handleAddCustomCategory} className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Title (English) <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={newCategoryData.title_en}
+                            onChange={e => setNewCategoryData({...newCategoryData, title_en: e.target.value})}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-orange-500"
+                            placeholder="e.g. My Special Dish"
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Title (Danish)
+                          </label>
+                          <input
+                            type="text"
+                            value={newCategoryData.title_da}
+                            onChange={e => setNewCategoryData({...newCategoryData, title_da: e.target.value})}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-orange-500"
+                            placeholder="Optional translation"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Internal Name (Slug)
+                          </label>
+                          <input
+                            type="text"
+                            value={newCategoryData.name}
+                            onChange={e => setNewCategoryData({...newCategoryData, name: e.target.value})}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-orange-500"
+                            placeholder="Auto-generated if empty"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">Unique identifier for database (e.g. my-dish)</p>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Icon (Emoji)
+                              </label>
+                              <input
+                                type="text"
+                                value={newCategoryData.icon}
+                                onChange={e => setNewCategoryData({...newCategoryData, icon: e.target.value})}
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-orange-500"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Default Slots
+                              </label>
+                              <input
+                                type="number"
+                                min="0"
+                                value={newCategoryData.slots}
+                                onChange={e => setNewCategoryData({...newCategoryData, slots: parseInt(e.target.value) || 0})}
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-orange-500"
+                              />
+                            </div>
+                        </div>
+
+                        <div className="pt-4 flex gap-3">
+                          <button
+                            type="button"
+                            onClick={() => setShowAddModal(false)}
+                            className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="submit"
+                            className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                          >
+                            Add Category
+                          </button>
+                        </div>
+                      </form>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {activeTab === 'registrations' && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6">Manage Registrations</h2>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Manage Registrations</h2>
+                <button
+                  onClick={onBack}
+                  className="flex items-center gap-2 px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors duration-200"
+                >
+                  Close
+                </button>
+              </div>
               
               {registrationsLoading ? (
                 <div className="text-center py-8">

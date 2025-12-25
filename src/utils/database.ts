@@ -46,11 +46,24 @@ export const loadAllPotluckCategories = async (potluckId: string): Promise<Categ
 
 export const savePotluckCategory = async (category: Partial<Category>): Promise<Category | null> => {
   try {
-    const { data, error } = await supabase
-      .from('categories')
-      .upsert(category as any) // Type assertion needed due to partial update
-      .select()
-      .single();
+    let query;
+    
+    if (category.id) {
+      query = supabase
+        .from('categories')
+        .update(category)
+        .eq('id', category.id)
+        .select()
+        .single();
+    } else {
+      query = supabase
+        .from('categories')
+        .insert(category as any)
+        .select()
+        .single();
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error('Error saving potluck category:', error);

@@ -9,7 +9,7 @@ UPDATE potluck_registrations pr
 SET category = c.id::text
 FROM categories c
 WHERE c.potluck_id = pr.potluck_id
-  AND c.id = pr.category;
+  AND c.name = pr.category;
 
 -- Now convert the column to UUID
 -- Note: This will fail if there are any values in 'category' that are not valid UUIDs.
