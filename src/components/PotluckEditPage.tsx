@@ -3,8 +3,8 @@ import { useParams } from 'react-router-dom';
 import { ArrowLeft, Save, Users, Settings, List, Plus, Edit2, LogOut, ChevronUp, ChevronDown, ChevronRight, Search, X } from 'lucide-react';
 
 import { supabase } from '../lib/supabase';
-import { Category, PotluckCategory, Registration } from '../types';
-import { loadCategories, loadAllPotluckCategories, savePotluckCategory, deletePotluckCategory } from '../utils/database';
+import { Category, DefaultCategory, Registration } from '../types';
+import { loadCategories, loadAllPotluckCategories, savePotluckCategory } from '../utils/database';
 import { POPULAR_POTLUCK_ICONS, ALL_POTLUCK_ICONS, getIconComponent } from '../utils/lucideIcons';
 import { AdminRegistrationCard } from './AdminRegistrationCard';
 
@@ -66,8 +66,8 @@ export const PotluckEditPage: React.FC<PotluckEditPageProps> = ({ onBack }) => {
   });
 
   // Categories state
-  const [allCategories, setAllCategories] = useState<Category[]>([]);
-  const [potluckCategories, setPotluckCategories] = useState<PotluckCategory[]>([]);
+  const [allCategories, setAllCategories] = useState<DefaultCategory[]>([]);
+  const [potluckCategories, setPotluckCategories] = useState<Category[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
 
   // Registrations state
@@ -220,22 +220,65 @@ export const PotluckEditPage: React.FC<PotluckEditPageProps> = ({ onBack }) => {
     }
   };
 
-  const handleToggleCategory = async (categoryId: string, isEnabled: boolean) => {
+  const handleToggleCategory = async (defaultCategoryId: string, isEnabled: boolean) => {
     if (!id) return;
 
     try {
       if (isEnabled) {
-        // Add category to potluck
-        const maxSortOrder = Math.max(...potluckCategories.map(pc => pc.sort_order), -1);
-        await savePotluckCategory({
-          potluck_id: id,
-          category_id: categoryId,
-          sort_order: maxSortOrder + 1,
-          is_enabled: true
-        });
+        // Check if it already exists (enabled or disabled)
+        const existing = potluckCategories.find(pc => pc.source_default_category_id === defaultCategoryId);
+        
+        if (existing) {
+          // Enable existing category
+          await savePotluckCategory({
+            id: existing.id,
+            is_enabled: true
+          });
+        } else {
+          // Create new category from default
+          const defaultCat = allCategories.find(c => c.id === defaultCategoryId);
+          if (!defaultCat) return;
+
+          const maxSortOrder = Math.max(...potluckCategories.map(pc => pc.sort_order), -1);
+          
+          await savePotluckCategory({
+            potluck_id: id,
+            name: defaultCat.name,
+            title_en: defaultCat.title_en,
+            title_da: defaultCat.title_da,
+            singular_en: defaultCat.singular_en,
+            singular_da: defaultCat.singular_da,
+            placeholder_en: defaultCat.placeholder_en,
+            placeholder_da: defaultCat.placeholder_da,
+            icon: defaultCat.icon,
+            color_class: defaultCat.color_class,
+            slots: defaultCat.slots,
+            sort_order: maxSortOrder + 1,
+            is_enabled: true,
+            source_default_category_id: defaultCat.id
+          });
+        }
       } else {
-        // Remove category from potluck
-        await deletePotluckCategory(id, categoryId);
+        // Disable category
+        // Find the category by its own ID (passed as defaultCategoryId in the "Remove" button case? 
+        // No, the UI usually passes the ID of the item being iterated.
+        // If enabling, we pass default ID.
+        // If disabling, we might pass PotluckCategory ID or Default ID.
+        // Let's assume enabling passes DefaultID.
+        // Rendering logic for "Enabled" passes PotluckCategory ID.
+        // SO this function needs to handle both? Or we split it?
+        // Let's check call sites.
+        // "Available" list calls handleToggleCategory(defaultCategory.id, true)
+        // "Enabled" list calls handleToggleCategory(potluckCategory.source_default_category_id, false) ??
+        // Let's make it consistent. We will pass DefaultCategoryID.
+        
+        const existing = potluckCategories.find(pc => pc.id === defaultCategoryId || pc.source_default_category_id === defaultCategoryId);
+        if (existing) {
+          await savePotluckCategory({
+            id: existing.id,
+            is_enabled: false
+          });
+        }
       }
 
       // Reload categories
@@ -246,14 +289,14 @@ export const PotluckEditPage: React.FC<PotluckEditPageProps> = ({ onBack }) => {
     }
   };
 
-  const handleMoveCategoryUp = async (categoryId: string) => {
+  const handleMoveCategoryUp = async (potluckCategoryId: string) => {
     if (!id) return;
 
     const enabledCategories = potluckCategories
       .filter(pc => pc.is_enabled)
       .sort((a, b) => a.sort_order - b.sort_order);
     
-    const currentIndex = enabledCategories.findIndex(pc => pc.category_id === categoryId);
+    const currentIndex = enabledCategories.findIndex(pc => pc.id === potluckCategoryId);
     if (currentIndex <= 0) return; // Already at top or not found
 
     // Swap sort orders
@@ -263,16 +306,12 @@ export const PotluckEditPage: React.FC<PotluckEditPageProps> = ({ onBack }) => {
     try {
       await Promise.all([
         savePotluckCategory({
-          potluck_id: id,
-          category_id: current.category_id,
-          sort_order: previous.sort_order,
-          is_enabled: true
+          id: current.id,
+          sort_order: previous.sort_order
         }),
         savePotluckCategory({
-          potluck_id: id,
-          category_id: previous.category_id,
-          sort_order: current.sort_order,
-          is_enabled: true
+          id: previous.id,
+          sort_order: current.sort_order
         })
       ]);
 
@@ -284,14 +323,14 @@ export const PotluckEditPage: React.FC<PotluckEditPageProps> = ({ onBack }) => {
     }
   };
 
-  const handleMoveCategoryDown = async (categoryId: string) => {
+  const handleMoveCategoryDown = async (potluckCategoryId: string) => {
     if (!id) return;
 
     const enabledCategories = potluckCategories
       .filter(pc => pc.is_enabled)
       .sort((a, b) => a.sort_order - b.sort_order);
     
-    const currentIndex = enabledCategories.findIndex(pc => pc.category_id === categoryId);
+    const currentIndex = enabledCategories.findIndex(pc => pc.id === potluckCategoryId);
     if (currentIndex < 0 || currentIndex >= enabledCategories.length - 1) return; // Already at bottom or not found
 
     // Swap sort orders
@@ -301,16 +340,12 @@ export const PotluckEditPage: React.FC<PotluckEditPageProps> = ({ onBack }) => {
     try {
       await Promise.all([
         savePotluckCategory({
-          potluck_id: id,
-          category_id: current.category_id,
-          sort_order: next.sort_order,
-          is_enabled: true
+          id: current.id,
+          sort_order: next.sort_order
         }),
         savePotluckCategory({
-          potluck_id: id,
-          category_id: next.category_id,
-          sort_order: current.sort_order,
-          is_enabled: true
+          id: next.id,
+          sort_order: current.sort_order
         })
       ]);
 
@@ -472,15 +507,16 @@ export const PotluckEditPage: React.FC<PotluckEditPageProps> = ({ onBack }) => {
             // Let's group by category sort order?
             // Simple string sort on category ID for now, or better:
             // Find category in allCategories or potluckCategories to get name/order
-            const catA = allCategories.find(c => c.id === a.category);
-            const catB = allCategories.find(c => c.id === b.category);
-             // Sort by potluck order if available?
-            const pcA = potluckCategories.find(pc => pc.category_id === a.category);
-            const pcB = potluckCategories.find(pc => pc.category_id === b.category);
+            // Sort by potluck order if available
+            const pcA = potluckCategories.find(pc => pc.id === a.category);
+            const pcB = potluckCategories.find(pc => pc.id === b.category);
+             
              if (pcA && pcB) return pcA.sort_order - pcB.sort_order;
              if (pcA) return -1;
              if (pcB) return 1;
-            return (catA?.name || a.category).localeCompare(catB?.name || b.category);
+             
+             // Fallback to name comparison
+            return a.category.localeCompare(b.category);
         case 'name':
             return a.name.localeCompare(b.name);
         case 'description':
@@ -970,12 +1006,12 @@ export const PotluckEditPage: React.FC<PotluckEditPageProps> = ({ onBack }) => {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {/* Available Categories */}
+                  {/* Default Categories */}
                   <div>
-                    <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">Available Categories</h3>
+                    <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">Default Categories</h3>
                     <div className="space-y-3">
                       {allCategories
-                        .filter(category => !potluckCategories.some(pc => pc.category_id === category.id && pc.is_enabled))
+                        .filter(category => !potluckCategories.some(pc => pc.source_default_category_id === category.id && pc.is_enabled))
                         .map((category) => (
                           <div key={category.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
                             <div className="flex items-center gap-3">
@@ -999,7 +1035,7 @@ export const PotluckEditPage: React.FC<PotluckEditPageProps> = ({ onBack }) => {
                             </button>
                           </div>
                         ))}
-                      {allCategories.filter(category => !potluckCategories.some(pc => pc.category_id === category.id && pc.is_enabled)).length === 0 && (
+                      {allCategories.filter(category => !potluckCategories.some(pc => pc.source_default_category_id === category.id && pc.is_enabled)).length === 0 && (
                         <div className="text-center py-6 text-gray-500 dark:text-gray-400">
                           All categories have been added to this potluck
                         </div>
@@ -1014,10 +1050,7 @@ export const PotluckEditPage: React.FC<PotluckEditPageProps> = ({ onBack }) => {
                       {potluckCategories
                         .filter(pc => pc.is_enabled)
                         .sort((a, b) => a.sort_order - b.sort_order)
-                        .map((potluckCategory, index, enabledCategories) => {
-                          const category = allCategories.find(c => c.id === potluckCategory.category_id);
-                          if (!category) return null;
-                          
+                        .map((category, index, enabledCategories) => {
                           return (
                             <div key={category.id} className="flex items-center justify-between p-3 bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 shadow-sm">
                               <div className="flex items-top gap-3">
@@ -1144,7 +1177,7 @@ export const PotluckEditPage: React.FC<PotluckEditPageProps> = ({ onBack }) => {
                                 .filter(pc => pc.is_enabled)
                                 .sort((a, b) => a.sort_order - b.sort_order)
                                 .forEach(pc => {
-                                    categoryGroups.set(pc.category_id, []);
+                                    categoryGroups.set(pc.id, []);
                                 });
 
                             // Also handle registrations for categories not in potluckCategories (if any)
@@ -1158,7 +1191,7 @@ export const PotluckEditPage: React.FC<PotluckEditPageProps> = ({ onBack }) => {
                             // Convert map to array and render
                             return Array.from(categoryGroups.keys()).map(categoryId => {
                                 const categoryRegistrations = categoryGroups.get(categoryId) || [];
-                                const category = allCategories.find(c => c.id === categoryId);
+                                const category = potluckCategories.find(c => c.id === categoryId);
                                 const isCollapsed = collapsedCategories.has(categoryId);
                                 
                                 // Skip empty categories if desired, or show them as empty sections
@@ -1213,7 +1246,7 @@ export const PotluckEditPage: React.FC<PotluckEditPageProps> = ({ onBack }) => {
                         })()
                     ) : (
                         sortedRegistrations.map((registration) => {
-                            const category = allCategories.find(c => c.id === registration.category);
+                            const category = potluckCategories.find(c => c.id === registration.category);
                             return (
                                 <AdminRegistrationCard
                                     key={registration.id}

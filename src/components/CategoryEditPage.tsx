@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Trash2, LogOut, Edit2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { Category } from '../types';
+import { DefaultCategory } from '../types';
 import { updateCategory, deleteCategory } from '../utils/database';
 import { getCategoryBorderColor, COLOR_CLASS_OPTIONS } from '../utils/colors';
 
@@ -18,7 +18,7 @@ export const CategoryEditPage: React.FC<CategoryEditPageProps> = ({ onBack }) =>
   const navigate = useNavigate();
   const handleBack = onBack || (() => navigate('/admin'));
 
-  const [category, setCategory] = useState<Category | null>(null);
+  const [category, setCategory] = useState<DefaultCategory | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
@@ -40,7 +40,7 @@ export const CategoryEditPage: React.FC<CategoryEditPageProps> = ({ onBack }) =>
       
       try {
         const { data, error } = await supabase
-          .from('categories')
+          .from('default_categories')
           .select('*')
           .eq('id', id)
           .single();

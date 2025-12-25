@@ -181,8 +181,7 @@ function MainApp() {
     const loadCategoriesData = async () => {
       if (potluck) {
         const potluckCategories = await loadPotluckCategories(potluck.id);
-        const categoriesData = potluckCategories.map(pc => pc.category!).filter(Boolean);
-        setCategories(categoriesData);
+        setCategories(potluckCategories);
       }
     };
 

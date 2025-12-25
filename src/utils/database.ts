@@ -1,16 +1,13 @@
 import { supabase } from '../lib/supabase';
-import { Registration, PotluckData, Category, PotluckCategory } from '../types';
+import { Registration, PotluckData, Category, DefaultCategory } from '../types';
 import { fetchGiphyGif } from './giphy';
 import { extractPotluckItem, generateRandomFoodItem } from './openai';
 
-export const loadPotluckCategories = async (potluckId: string): Promise<PotluckCategory[]> => {
+export const loadPotluckCategories = async (potluckId: string): Promise<Category[]> => {
   try {
     const { data, error } = await supabase
-      .from('potluck_categories')
-      .select(`
-        *,
-        category:categories(*)
-      `)
+      .from('categories')
+      .select('*')
       .eq('potluck_id', potluckId)
       .eq('is_enabled', true)
       .order('sort_order', { ascending: true });
@@ -27,14 +24,11 @@ export const loadPotluckCategories = async (potluckId: string): Promise<PotluckC
   }
 };
 
-export const loadAllPotluckCategories = async (potluckId: string): Promise<PotluckCategory[]> => {
+export const loadAllPotluckCategories = async (potluckId: string): Promise<Category[]> => {
   try {
     const { data, error } = await supabase
-      .from('potluck_categories')
-      .select(`
-        *,
-        category:categories(*)
-      `)
+      .from('categories')
+      .select('*')
       .eq('potluck_id', potluckId)
       .order('sort_order', { ascending: true });
 
@@ -50,19 +44,11 @@ export const loadAllPotluckCategories = async (potluckId: string): Promise<Potlu
   }
 };
 
-export const savePotluckCategory = async (potluckCategory: Omit<PotluckCategory, 'id' | 'created_at' | 'updated_at'>): Promise<PotluckCategory | null> => {
+export const savePotluckCategory = async (category: Partial<Category>): Promise<Category | null> => {
   try {
     const { data, error } = await supabase
-      .from('potluck_categories')
-      .upsert({
-        potluck_id: potluckCategory.potluck_id,
-        category_id: potluckCategory.category_id,
-        sort_order: potluckCategory.sort_order,
-        is_enabled: potluckCategory.is_enabled
-      }, { 
-        onConflict: 'potluck_id,category_id',
-        ignoreDuplicates: false 
-      })
+      .from('categories')
+      .upsert(category as any) // Type assertion needed due to partial update
       .select()
       .single();
 
@@ -78,13 +64,12 @@ export const savePotluckCategory = async (potluckCategory: Omit<PotluckCategory,
   }
 };
 
-export const deletePotluckCategory = async (potluckId: string, categoryId: string): Promise<boolean> => {
+export const deletePotluckCategory = async (id: string): Promise<boolean> => {
   try {
     const { error } = await supabase
-      .from('potluck_categories')
+      .from('categories')
       .delete()
-      .eq('potluck_id', potluckId)
-      .eq('category_id', categoryId);
+      .eq('id', id);
 
     if (error) {
       console.error('Error deleting potluck category:', error);
@@ -98,10 +83,10 @@ export const deletePotluckCategory = async (potluckId: string, categoryId: strin
   }
 };
 
-export const saveCategory = async (category: Omit<Category, 'id' | 'created_at' | 'updated_at'>): Promise<Category | null> => {
+export const saveCategory = async (category: Omit<DefaultCategory, 'id' | 'created_at' | 'updated_at'>): Promise<DefaultCategory | null> => {
   try {
     const { data, error } = await supabase
-      .from('categories')
+      .from('default_categories')
       .insert([category])
       .select()
       .single();
@@ -118,10 +103,10 @@ export const saveCategory = async (category: Omit<Category, 'id' | 'created_at' 
   }
 };
 
-export const updateCategory = async (id: string, category: Partial<Category>): Promise<Category | null> => {
+export const updateCategory = async (id: string, category: Partial<DefaultCategory>): Promise<DefaultCategory | null> => {
   try {
     const { data, error } = await supabase
-      .from('categories')
+      .from('default_categories')
       .update(category)
       .eq('id', id)
       .select()
@@ -142,7 +127,7 @@ export const updateCategory = async (id: string, category: Partial<Category>): P
 export const deleteCategory = async (id: string): Promise<boolean> => {
   try {
     const { error } = await supabase
-      .from('categories')
+      .from('default_categories')
       .delete()
       .eq('id', id);
 
@@ -158,10 +143,10 @@ export const deleteCategory = async (id: string): Promise<boolean> => {
   }
 };
 
-export const loadCategories = async (): Promise<Category[]> => {
+export const loadDefaultCategories = async (): Promise<DefaultCategory[]> => {
   try {
     const { data: categories, error } = await supabase
-      .from('categories')
+      .from('default_categories')
       .select('*')
       .order('title_en', { ascending: true });
 
@@ -177,7 +162,11 @@ export const loadCategories = async (): Promise<Category[]> => {
   }
 };
 
-export const getDefaultCategories = (): Category[] => [
+export const loadCategories = async (): Promise<DefaultCategory[]> => {
+  return loadDefaultCategories();
+};
+
+export const getDefaultCategories = (): DefaultCategory[] => [
   {
     id: 'default',
     name: 'default',
@@ -199,9 +188,8 @@ export const loadPotluckData = async (potluckId?: string): Promise<PotluckData> 
       return getInitialData();
     }
 
-    // Load potluck categories to get the dynamic structure
-    const potluckCategories = await loadPotluckCategories(potluckId);
-    const enabledCategories = potluckCategories.map(pc => pc.category!).filter(Boolean);
+    // Load potluck categories
+    const enabledCategories = await loadPotluckCategories(potluckId);
 
     const { data: registrations, error } = await supabase
       .from('potluck_registrations')
@@ -218,8 +206,10 @@ export const loadPotluckData = async (potluckId?: string): Promise<PotluckData> 
     const data: any = {};
     
     enabledCategories.forEach(category => {
-      if (category.id === 'additional') {
-        data[getCategoryKey(category.name)] = [];
+      // Use name check instead of ID check for 'additional' category
+      if (category.name === 'additional') {
+        // For additional items, we use the ID-based key now to be consistent
+        data[getCategoryKey(category.id)] = [];
       } else {
         // Default slot counts for different categories
         const defaultSlots = category.slots;
@@ -239,34 +229,30 @@ export const loadPotluckData = async (potluckId?: string): Promise<PotluckData> 
         updated_at: reg.updated_at
       };
 
-      if (reg.category === 'additional') {
-        // Find the category to determine if it's additional
-        const category = enabledCategories.find(c => c.id === reg.category);
-        if (category && category.title_en === 'Additional Items') {
-          const key = getCategoryKey(category.id);
-          if (data[key]) {
-            data[key].push(registration);
-          }
+      const category = enabledCategories.find(c => c.id === reg.category);
+      if (!category) return;
+
+      const key = getCategoryKey(category.id);
+
+      if (category.name === 'additional') {
+        if (data[key]) {
+          data[key].push(registration);
         }
       } else if (reg.slot_number !== null) {
         const index = reg.slot_number - 1;
-        const category = enabledCategories.find(c => c.id === reg.category);
-        if (category) {
-          const key = getCategoryKey(category.id);
-          if (data[key]) {
-            // Expand array if needed
-            while (data[key].length <= index) {
-              data[key].push(null);
-            }
-            if (index >= 0) data[key][index] = registration;
+        if (data[key]) {
+          // Expand array if needed
+          while (data[key].length <= index) {
+            data[key].push(null);
           }
+          if (index >= 0) data[key][index] = registration;
         }
       }
     });
 
     // Add one extra slot to each non-additional category if all default slots are filled
     enabledCategories.forEach(category => {
-      if (category.title_en !== 'Additional Items') {
+      if (category.name !== 'additional') {
         const key = getCategoryKey(category.id);
         const defaultCount = category.slots;
         if (data[key] && data[key].length === defaultCount && data[key].every((item: any) => item !== null)) {

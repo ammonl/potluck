@@ -9,9 +9,10 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
-      categories: {
+      default_categories: {
         Row: {
           id: string
+          name: string
           title_en: string
           title_da: string
           singular_en: string
@@ -26,6 +27,7 @@ export interface Database {
         }
         Insert: {
           id?: string
+          name: string
           title_en: string
           title_da: string
           singular_en: string
@@ -40,6 +42,7 @@ export interface Database {
         }
         Update: {
           id?: string
+          name?: string
           title_en?: string
           title_da?: string
           singular_en?: string
@@ -53,35 +56,66 @@ export interface Database {
           updated_at?: string
         }
       }
-      potluck_categories: {
+      categories: {
         Row: {
           id: string
           potluck_id: string
-          category_id: string
+          name: string
+          title_en: string
+          title_da: string
+          singular_en: string
+          singular_da: string
+          placeholder_en: string
+          placeholder_da: string
+          icon: string
+          color_class: string
+          slots: number
           sort_order: number
           is_enabled: boolean
+          source_default_category_id: string | null
           created_at: string
           updated_at: string
         }
         Insert: {
           id?: string
           potluck_id: string
-          category_id: string
+          name: string
+          title_en: string
+          title_da: string
+          singular_en: string
+          singular_da: string
+          placeholder_en?: string
+          placeholder_da?: string
+          icon?: string
+          color_class?: string
+          slots?: number
           sort_order?: number
           is_enabled?: boolean
+          source_default_category_id?: string | null
           created_at?: string
           updated_at?: string
         }
         Update: {
           id?: string
           potluck_id?: string
-          category_id?: string
+          name?: string
+          title_en?: string
+          title_da?: string
+          singular_en?: string
+          singular_da?: string
+          placeholder_en?: string
+          placeholder_da?: string
+          icon?: string
+          color_class?: string
+          slots?: number
           sort_order?: number
           is_enabled?: boolean
+          source_default_category_id?: string | null
           created_at?: string
           updated_at?: string
         }
       }
+
       potluck_registrations: {
         Row: {
           id: string

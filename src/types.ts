@@ -1,5 +1,25 @@
 export interface Category {
   id: string;
+  potluck_id: string;
+  name: string;
+  title_en: string;
+  title_da: string;
+  singular_en: string;
+  singular_da: string;
+  placeholder_en: string;
+  placeholder_da: string;
+  icon: string;
+  color_class: string;
+  slots: number;
+  sort_order: number;
+  is_enabled: boolean;
+  source_default_category_id?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface DefaultCategory {
+  id: string;
   name: string;
   title_en: string;
   title_da: string;
@@ -14,16 +34,7 @@ export interface Category {
   updated_at?: string;
 }
 
-export interface PotluckCategory {
-  id: string;
-  potluck_id: string;
-  category_id: string;
-  sort_order: number;
-  is_enabled: boolean;
-  created_at?: string;
-  updated_at?: string;
-  category?: Category; // Joined category data
-}
+
 
 export interface Registration {
   id: string;

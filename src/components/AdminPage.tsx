@@ -4,7 +4,7 @@ import { ArrowLeft, Plus, Users, Calendar, Settings, Edit2, Trash2, Globe, LogOu
 import { supabase } from '../lib/supabase';
 import { loadCategories, saveCategory, deleteCategory } from '../utils/database';
 import { getCategoryBorderColor } from '../utils/colors';
-import { Category } from '../types';
+import { DefaultCategory } from '../types';
 import { getIconComponent } from '../utils/lucideIcons';
 import { IconSelector } from './IconSelector';
 import { UserInfo } from './UserInfo';
@@ -36,7 +36,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'potlucks' | 'categories'>('potlucks');
   const [potlucks, setPotlucks] = useState<Potluck[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<DefaultCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNewPotluckForm, setShowNewPotluckForm] = useState(false);
   const [showNewCategoryForm, setShowNewCategoryForm] = useState(false);
@@ -488,7 +488,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
           {activeTab === 'categories' && (
             <div className="space-y-6">
               <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Food Categories</h2>
+                <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Default Categories</h2>
                 <button
                   onClick={() => setShowNewCategoryForm(true)}
                   className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors duration-200"
@@ -603,7 +603,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
 
 
 interface CategoryCardProps {
-  category: Category;
+  category: DefaultCategory;
   onEdit: () => void;
   onDelete: () => void;
 }
