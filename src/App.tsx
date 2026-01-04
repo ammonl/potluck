@@ -149,7 +149,7 @@ function MainApp() {
         
         if (slug) {
           // Load specific potluck by slug
-          query = query.eq('slug', slug).eq('is_active', true);
+          query = query.ilike('slug', slug).eq('is_active', true);
         } else {
           // Load the default potluck for home page
           query = query.eq('slug', import.meta.env.VITE_DEFAULT_POTLUCK).eq('is_active', true);
@@ -349,7 +349,7 @@ function MainApp() {
               const { data: potlucks, error } = await supabase
                 .from('potlucks')
                 .select('*')
-                .eq('slug', slugInput.trim())
+                .ilike('slug', slugInput.trim())
                 .eq('is_active', true)
                 .limit(1);
 
